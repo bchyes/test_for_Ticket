@@ -1,0 +1,1 @@
+/usr/bin/c++  -g   CMakeFiles/Ticket.dir/main_new.cpp.o  -o Ticket 
