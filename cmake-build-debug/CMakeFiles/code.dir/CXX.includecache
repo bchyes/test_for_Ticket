@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/mnt/d/CLion/Ticket？/Date.h
+/mnt/d/CLion/code/Date.h
 iostream
 -
 cstring
@@ -18,7 +18,7 @@ cmath
 fstream
 -
 
-/mnt/d/CLion/Ticket？/Ticket.h
+/mnt/d/CLion/code/Ticket.h
 iostream
 -
 cstring
@@ -30,17 +30,17 @@ cmath
 fstream
 -
 utility.hpp
-/mnt/d/CLion/Ticket？/utility.hpp
+/mnt/d/CLion/code/utility.hpp
 bpt.h
-/mnt/d/CLion/Ticket？/bpt.h
+/mnt/d/CLion/code/bpt.h
 string.hpp
-/mnt/d/CLion/Ticket？/string.hpp
+/mnt/d/CLion/code/string.hpp
 vector.hpp
-/mnt/d/CLion/Ticket？/vector.hpp
+/mnt/d/CLion/code/vector.hpp
 Date.h
-/mnt/d/CLion/Ticket？/Date.h
+/mnt/d/CLion/code/Date.h
 
-/mnt/d/CLion/Ticket？/Train.h
+/mnt/d/CLion/code/Train.h
 iostream
 -
 cstring
@@ -52,13 +52,13 @@ cmath
 fstream
 -
 string.hpp
-/mnt/d/CLion/Ticket？/string.hpp
+/mnt/d/CLion/code/string.hpp
 vector.hpp
-/mnt/d/CLion/Ticket？/vector.hpp
+/mnt/d/CLion/code/vector.hpp
 Ticket.h
-/mnt/d/CLion/Ticket？/Ticket.h
+/mnt/d/CLion/code/Ticket.h
 
-/mnt/d/CLion/Ticket？/User.h
+/mnt/d/CLion/code/User.h
 iostream
 -
 cstring
@@ -70,13 +70,13 @@ cmath
 fstream
 -
 utility.hpp
-/mnt/d/CLion/Ticket？/utility.hpp
+/mnt/d/CLion/code/utility.hpp
 bpt.h
-/mnt/d/CLion/Ticket？/bpt.h
+/mnt/d/CLion/code/bpt.h
 string.hpp
-/mnt/d/CLion/Ticket？/string.hpp
+/mnt/d/CLion/code/string.hpp
 
-/mnt/d/CLion/Ticket？/bpt.h
+/mnt/d/CLion/code/bpt.h
 iostream
 -
 functional
@@ -88,13 +88,13 @@ fstream
 cstring
 -
 vector.hpp
-/mnt/d/CLion/Ticket？/vector.hpp
+/mnt/d/CLion/code/vector.hpp
 utility.hpp
-/mnt/d/CLion/Ticket？/utility.hpp
+/mnt/d/CLion/code/utility.hpp
 exceptions.hpp
-/mnt/d/CLion/Ticket？/exceptions.hpp
+/mnt/d/CLion/code/exceptions.hpp
 
-/mnt/d/CLion/Ticket？/exceptions.hpp
+/mnt/d/CLion/code/exceptions.hpp
 cstddef
 -
 cstring
@@ -102,17 +102,17 @@ cstring
 string
 -
 
-/mnt/d/CLion/Ticket？/linked_hashmap.hpp
+/mnt/d/CLion/code/linked_hashmap.hpp
 functional
 -
 cstddef
 -
 utility.hpp
-/mnt/d/CLion/Ticket？/utility.hpp
+/mnt/d/CLion/code/utility.hpp
 exceptions.hpp
-/mnt/d/CLion/Ticket？/exceptions.hpp
+/mnt/d/CLion/code/exceptions.hpp
 
-/mnt/d/CLion/Ticket？/main_new.cpp
+/mnt/d/CLion/code/main_new.cpp
 iostream
 -
 cstring
@@ -124,19 +124,19 @@ cmath
 fstream
 -
 Train.h
-/mnt/d/CLion/Ticket？/Train.h
+/mnt/d/CLion/code/Train.h
 User.h
-/mnt/d/CLion/Ticket？/User.h
+/mnt/d/CLion/code/User.h
 token_scanner.h
-/mnt/d/CLion/Ticket？/token_scanner.h
+/mnt/d/CLion/code/token_scanner.h
 bpt.h
-/mnt/d/CLion/Ticket？/bpt.h
+/mnt/d/CLion/code/bpt.h
 linked_hashmap.hpp
-/mnt/d/CLion/Ticket？/linked_hashmap.hpp
+/mnt/d/CLion/code/linked_hashmap.hpp
 string.hpp
-/mnt/d/CLion/Ticket？/string.hpp
+/mnt/d/CLion/code/string.hpp
 
-/mnt/d/CLion/Ticket？/string.hpp
+/mnt/d/CLion/code/string.hpp
 utility
 -
 iostream
@@ -150,7 +150,7 @@ cmath
 fstream
 -
 
-/mnt/d/CLion/Ticket？/token_scanner.h
+/mnt/d/CLion/code/token_scanner.h
 iostream
 -
 cstring
@@ -162,13 +162,13 @@ cmath
 fstream
 -
 
-/mnt/d/CLion/Ticket？/utility.hpp
+/mnt/d/CLion/code/utility.hpp
 utility
 -
 
-/mnt/d/CLion/Ticket？/vector.hpp
+/mnt/d/CLion/code/vector.hpp
 exceptions.hpp
-/mnt/d/CLion/Ticket？/exceptions.hpp
+/mnt/d/CLion/code/exceptions.hpp
 climits
 -
 cstddef

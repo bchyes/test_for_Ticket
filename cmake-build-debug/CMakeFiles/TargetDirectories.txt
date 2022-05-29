@@ -1,3 +1,3 @@
-/mnt/d/CLion/Ticket？/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/mnt/d/CLion/Ticket？/cmake-build-debug/CMakeFiles/edit_cache.dir
-/mnt/d/CLion/Ticket？/cmake-build-debug/CMakeFiles/code.dir
+/mnt/d/CLion/code/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/mnt/d/CLion/code/cmake-build-debug/CMakeFiles/edit_cache.dir
+/mnt/d/CLion/code/cmake-build-debug/CMakeFiles/code.dir
