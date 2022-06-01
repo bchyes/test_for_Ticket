@@ -181,7 +181,7 @@ class TrainManagement{
 private:
 	sjtu::bpt<sjtu::string,train> pos;
 	sjtu::bpt< type3 ,int> Road;
-	sjtu::vector<sjtu::string> Train[M*M*M>>1];
+	sjtu::vector<sjtu::string> Train[M*M*M*3];
 public:
 	TrainManagement();
 	
@@ -324,7 +324,7 @@ void TrainManagement::Update_ticket(const Ticket &t){
 }
 
 int ticket_num;
-Ticket A[M];
+Ticket A[M*M];
 bool (*cmp)(const Ticket &a,const Ticket &b);
 bool (*Cmp)(const Transfer_Ticket &a,const Transfer_Ticket &b);
 void sort(int l,int r){
