@@ -4,7 +4,7 @@
 #include <cmath>
 #include <fstream>
 
-const int DAY[]={0,1,2,3,4,5,30,31,31,30,31,30,31};
+const int DAY[]={0,1,2,3,4,5,30,31,31,9};
 struct Date{
 	int m,d,hr,mi;
 	
@@ -22,7 +22,14 @@ struct Date{
 	}
 	
 	void print(){
-		printf("0%d-%02d %02d:%02d",m,d,hr,mi);
+		std::cout<<'0'<<m<<'-';
+		if(d<10)std::cout<<'0';
+		std::cout<<d;
+		if(hr<10)std::cout<<" 0";
+		else std::cout<<' ';
+		std::cout<<hr<<':';
+		if(mi<10)std::cout<<'0';
+		std::cout<<mi;
 	} 
 	
 	void operator += (const int &t){
@@ -32,17 +39,6 @@ struct Date{
 		d+=hr/24;
 		hr%=24;
 		while(DAY[m]<d)d-=DAY[m++];
-	}
-	
-	Date operator + (const int &x)const{
-		Date ret(*this);
-		ret.mi+=x;
-		ret.hr+=ret.mi/60;
-		ret.mi%=60;
-		ret.d+=ret.hr/24;
-		ret.hr%=24;
-		while(DAY[ret.m]<ret.d)ret.d-=DAY[ret.m++];
-		return ret; 
 	}
 	
 	bool operator < (const Date &res)const{

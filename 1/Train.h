@@ -7,26 +7,12 @@
 #include "string.hpp"
 #include "vector.hpp"
 #include "Ticket.h"
-#include "linked_hashmap.hpp"
-//sjtu::linked_hashmap<std::string,bool>pos;
 
 const int M=105;
 typedef sjtu::pair<sjtu::string,sjtu::string> type3;
 
 class TrainManagement;
 
-struct trainNode{
-	sjtu::linked_hashmap<std::string,int>pos;
-	int day,sum_cost[M],sum_tr[M],sum_st[M];
-	Date st[M];
-	inline int find(const sjtu::string &s){	
-		std::string a=s.change();
-		if( !pos.count(a) )return -1;
-		return pos[a];
-	}
-}T[10005];
-sjtu::linked_hashmap<std::string,int>Pos;
-int tt;
 class train{
 private:
 	sjtu::string trainID;
@@ -46,17 +32,22 @@ public:
 	
 	~train();
 	
-	void Update_ticket(const int &date,const int &l,const int &r,const int &num);//更新车票，从date发车的火车有num张从l到r的车票被买了 
+	int find(const sjtu::string &s);
 	
-	int query_ticket(const int &date,const int &l,const int &r);//询问从date发车的火车至多能买多少张从l到r的车票
+	void Update_ticket(const Date &date,const sjtu::string &l,const sjtu::string &r,const int &num);//更新车票，从date发车的火车有num张从l到r的车票被买了 
+	
+	int query_ticket(const Date &date,const sjtu::string &l,const sjtu::string &r);//询问从date发车的火车至多能买多少张从l到r的车票
 	
 	void check_ticket(const Date &date);//在某一用户退票后，需确认有哪些候票人能拿到票 
 	
-	Ticket get_ticket(const sjtu::string &l,const sjtu::string &r,const Date &date);  
+	Ticket get_ticket(const sjtu::string &l,const sjtu::string &r,const Date &date); 
+	
+	Date get_start(const sjtu::string &s,const bool fl=0); 
 	
 	sjtu::pair<int,Ticket> get_ticket2(const sjtu::string &l,const sjtu::string &r,const Date &date);
 	
 	friend class TrainManagement;
+		
 };
 
 train::train(const std::string &trainID_,const int &stationNum_,const sjtu::string *stations_,const int &seatNum,const int *prices_,const int *travelTimes_,
@@ -81,48 +72,69 @@ train::~train(){}
 
 train::train():rel(0),stationNum(0),trainID(""){} 
 
-void train::Update_ticket(const int &k,const int &l,const int &r,const int &num){
-	for(int i=l,*x=LeftTicket[k];i<r;i++)x[i]-=num;
-}
-
-int train::query_ticket(const int &k,const int &l,const int &r){
-	int ret=2e9+233;
-	for(int i=l,*x=LeftTicket[k];i<r;i++)
-		if(x[i]<ret)ret=x[i]; 
+Date train::get_start(const sjtu::string &s,const bool fl){
+	Date ret;
+	if(!fl)ret=Date(saleDateL.m,saleDateL.d,startTime.hr,startTime.mi);
+	else ret=Date(saleDateR.m,saleDateR.d,startTime.hr,startTime.mi);
+	for(int i=0;;i++){
+		if(i>0)ret+=stopoverTimes[i-1];
+		if(stations[i]==s)break;
+		ret+=travelTimes[i];
+	}
 	return ret;
 }
 
-Ticket train::get_ticket(const sjtu::string &l_,const sjtu::string &r_,const Date &date_){
+int train::find(const sjtu::string &s){
+	for(int i=0;i<stationNum;i++)
+		if(s==stations[i])return i;
+	return -1;
+}
+
+void train::Update_ticket(const Date &date,const sjtu::string &l,const sjtu::string &r,const int &num){
+	for(int now=date-get_start(l),i=find(l),R=find(r);i<R;i++)LeftTicket[now][i]-=num;
+}
+
+int train::query_ticket(const Date &date,const sjtu::string &l,const sjtu::string &r){
+	int ret=2e9+233;
+	for(int now=date-get_start(l),i=find(l),R=find(r);i<R;i++)
+		if(LeftTicket[now][i]<ret)ret=LeftTicket[now][i];
+	return ret;
+}
+
+Ticket train::get_ticket(const sjtu::string &l,const sjtu::string &r,const Date &date_){
 	if(rel!=1)return Ticket("");
-	int id=Pos[trainID.change()],l=T[id].find(l_),r=T[id].find(r_);
-	if(l==-1||r==-1||r<l)return Ticket("");
+	int lx=find(l),rx=find(r);
+	if(lx==-1||rx==-1||rx<lx)return Ticket("");
 	Date date(date_);
-	Date L=T[id].st[l],R=T[id].st[l]+T[id].day;
-	if(date<L||R<date)return Ticket("");
+	Date L=get_start(l),R=get_start(l,1);
+	if(date<L||R<date)return Ticket(sjtu::string(""));
 	Ticket ret;
+	int k=date-L; 
 	date.hr=L.hr,date.mi=L.mi;
 	ret.trainID=trainID;
-	ret.From=l_;
-	ret.To=r_;
+	ret.From=l;
+	ret.To=r;
 	ret.TimeL=date;
-	ret.num=query_ticket(date-L,l,r); 
-	
-	date+=T[id].sum_st[r-1]-T[id].sum_st[l];
-	ret.time+=T[id].sum_st[r-1]-T[id].sum_st[l];
-	date+=T[id].sum_tr[r]-T[id].sum_tr[l];
-	ret.time+=T[id].sum_tr[r]-T[id].sum_tr[l];
-	
+	for(int st=find(l),i=st;stations[i]!=r;i++){
+		ret.cost+=prices[i];
+		if(ret.num>LeftTicket[k][i])ret.num=LeftTicket[k][i];
+		if(i>st){
+			date+=stopoverTimes[i-1];
+			ret.time+=stopoverTimes[i-1];
+		}
+		date+=travelTimes[i];
+		ret.time+=travelTimes[i];
+	}
 	ret.TimeR=date; 
-	ret.cost=T[id].sum_cost[r]-T[id].sum_cost[l];
 	return ret;
 }
 
-sjtu::pair<int,Ticket> train::get_ticket2(const sjtu::string &l_,const sjtu::string &r_,const Date &date_){
+sjtu::pair<int,Ticket> train::get_ticket2(const sjtu::string &l,const sjtu::string &r,const Date &date_){
 	if(rel!=1)return sjtu::pair<int,Ticket>(-1,Ticket(""));
-	int id=Pos[trainID.change()],l=T[id].find(l_),r=T[id].find(r_);
-	if(l==-1||r==-1||r<l)return sjtu::pair<int,Ticket>(-1,Ticket(""));
+	int lx=find(l),rx=find(r);
+	if(lx==-1||rx==-1||rx<lx)return sjtu::pair<int,Ticket>(-1,Ticket(""));
 	Date date(date_); 
-	Date L=T[id].st[l],R=T[id].st[l]+T[id].day;
+	Date L=get_start(l),R=get_start(l,1);
 	if(R<date)return sjtu::pair<int,Ticket>(-1,Ticket(""));
 	int Ret=0;
 	if(date<L){
@@ -133,27 +145,35 @@ sjtu::pair<int,Ticket> train::get_ticket2(const sjtu::string &l_,const sjtu::str
 			Ret=L.del(date);
 			date.hr=L.hr,date.mi=L.mi;
 		}else {
-			date+=60*24;
-			if(R<date)return sjtu::pair<int,Ticket>(-1,Ticket(""));
-			Ret=date.change(0)+L.change(1);
-			date.hr=L.hr,date.mi=L.mi;
+			Date last(L);
+			L+=stopoverTimes[find(l)];
+			if(date.Compare(L))L=last;
+			else {
+				L=last;
+				date+=60*24;
+				if(R<date)return sjtu::pair<int,Ticket>(-1,Ticket(""));
+				Ret=date.change(0)+L.change(1);
+				date.hr=L.hr,date.mi=L.mi;
+			}
 		}
 	}
 	Ticket ret;
-	date.hr=L.hr,date.mi=L.mi;
+	int k=date-L; 
 	ret.trainID=trainID;
-	ret.From=l_;
-	ret.To=r_;
+	ret.From=l;
+	ret.To=r;
 	ret.TimeL=date;
-	ret.num=query_ticket(date-L,l,r); 
-	date+=T[id].sum_st[r-1]-T[id].sum_st[l];
-	ret.time+=T[id].sum_st[r-1]-T[id].sum_st[l];
-	
-	date+=T[id].sum_tr[r]-T[id].sum_tr[l];
-	ret.time+=T[id].sum_tr[r]-T[id].sum_tr[l];
-	
+	for(int st=find(l),i=st;stations[i]!=r;i++){
+		ret.cost+=prices[i];
+		if(ret.num>LeftTicket[k][i])ret.num=LeftTicket[k][i];
+		if(i>st){
+			date+=stopoverTimes[i-1];
+			ret.time+=stopoverTimes[i-1];
+		}
+		date+=travelTimes[i];
+		ret.time+=travelTimes[i];
+	}
 	ret.TimeR=date; 
-	ret.cost=T[id].sum_cost[r]-T[id].sum_cost[l];
 	return sjtu::pair<int,Ticket>(Ret,ret);
 }
 
@@ -161,7 +181,7 @@ class TrainManagement{
 private:
 	sjtu::bpt<sjtu::string,train> pos;
 	sjtu::bpt< type3 ,int> Road;
-	sjtu::bpt<sjtu::pair<int,int> ,sjtu::string> Train;
+	sjtu::vector<sjtu::string> Train[M*M*M*3];
 public:
 	TrainManagement();
 	
@@ -170,7 +190,7 @@ public:
 	void add_train(const std::string &trainID_,const int &stationNum_,const sjtu::string *stations_,const int &seatNum,const int *prices_,const int *travelTimes_,
 	  const int *stopoverTimes_,const Date &startTime_,const Date &saleDateL_,const Date &saleDateR_,const char &type_);//add_train command 
 	
-	void release_train(const std::string &trainID,const int &timestamp);//release_train command 
+	void release_train(const std::string &trainID);//release_train command 
 	
 	void delete_train(const std::string &trainID);//delete_train command
 	
@@ -187,53 +207,29 @@ public:
 	Transfer_Ticket get_second(const Ticket &now,const sjtu::string To);
 	
 	void Reset();
-	
-	void insert(const sjtu::string &trainID); 
 };
 
-void TrainManagement::insert(const sjtu::string &trainID_){
-	train x=pos.find(trainID_);
-	Pos[x.trainID.change()]=++tt;
-	for(int i=0;i<x.stationNum;i++)
-		T[tt].pos[x.stations[i].change()]=i;
-	 T[tt].day=(x.saleDateR-x.saleDateL)*60*24;
-	 int *sum=T[tt].sum_cost;
-	 sum[0]=0; 
-	 for(int i=1;i<=x.stationNum;i++)
-	 	sum[i]=sum[i-1]+x.prices[i-1];
-	
-	sum=T[tt].sum_tr;
-	sum[0]=0;
-	 for(int i=1;i<=x.stationNum;i++)
-	 	sum[i]=sum[i-1]+x.travelTimes[i-1];
-	
-	sum=T[tt].sum_st;
-	sum[0]=0;
-	 for(int i=1;i<x.stationNum;i++)
-	 	sum[i]=sum[i-1]+x.stopoverTimes[i-1];
-	
-	Date date(x.saleDateL.m,x.saleDateL.d,x.startTime.hr,x.startTime.mi);
-	for(int i=0;;i++){
-		if(i>0&&i!=x.stationNum-1)date+=x.stopoverTimes[i-1];
-		T[tt].st[i]=date;
-		if(i==x.stationNum-1)break;
-		date+=x.travelTimes[i];
-	}
-}
-
-TrainManagement::TrainManagement():pos("file_train","file_train_delete"),Road("file_Road","file_Road_delete"),Train("file_Train_","file_Train__delete"){
+TrainManagement::TrainManagement():pos("file_train","file_train_delete"),Road("file_Road","file_Road_delete"){
 	if(Road.empty()){
 		type3 res("","");
 		sjtu::pair< type3,int >tmp(res,0);
 		Road.insert(tmp);
 	}
-	tt=0;
+//	std::cerr<<"OK"<<std::endl; 
 	if(!pos.empty()){
 		sjtu::string last(""),now=pos.upper_bound(last);
-		while(now!=last){
-			last=now,now=pos.upper_bound(last);
-			if(pos.find(last).rel!=1)continue;
-			insert(last);
+		while(last!=now){
+			train x=pos.find(now);
+			last=now;
+			now=pos.upper_bound(last);
+			if(x.rel!=1)continue;
+			std::cerr<<x.rel<<std::endl;
+			for(int i=0;i<x.stationNum;i++)
+				for(int j=i+1;j<x.stationNum;j++){
+					type3 res(x.stations[i],x.stations[j]);
+					if(!Road.count(res))std::cerr<<x.trainID<<std::endl; 
+					else Train[ Road.find(res) ].push_back(last);
+				}
 		}
 	}
 }
@@ -249,6 +245,7 @@ void TrainManagement::add_train(const std::string &trainID_,const int &stationNu
 			return void(puts("0"));
 		}else return void(puts("-1"));
 	}
+//	std::cerr<<trainID_<<std::endl;
 	pos.insert(sjtu::pair<sjtu::string,train>(x.trainID,x));
 	puts("0");
 }
@@ -256,30 +253,30 @@ void TrainManagement::add_train(const std::string &trainID_,const int &stationNu
 void TrainManagement::delete_train(const std::string &trainID_){
 	sjtu::string trainID(trainID_);
 	if(!pos.count(trainID) || pos.find(trainID).rel!=0 )return void(puts("-1"));
+	std::cerr<<'#'<<trainID<<std::endl;
 	train tmp=pos.find(trainID);
 	tmp.rel=2;
 	pos.modify(trainID,tmp);
+	std::cerr<<'*'<<pos.find(trainID).rel<<std::endl;
 	puts("0");
 }
 
-void TrainManagement::release_train(const std::string &trainID_,const int &timestamp){
+void TrainManagement::release_train(const std::string &trainID_){
 	sjtu::string trainID(trainID_);
 	if(!pos.count(trainID) || pos.find(trainID).rel!=0 )return void(puts("-1"));
 	train x=pos.find(trainID);
 	x.rel=1;
 	pos.modify(trainID,x);
-	insert(trainID_);
+	puts("0");
 	type3 st(sjtu::string(""),sjtu::string(""));
 	int k=Road.find( st );
 	for(int i=0;i<x.stationNum;i++)
 		for(int j=i+1;j<x.stationNum;j++){
 			type3 res(x.stations[i],x.stations[j]);
 			if(!Road.count(res))Road.insert( sjtu::pair<type3,int>(res,++k) );
-			sjtu::pair<int,int> tmp(Road.find(res),timestamp);
-			Train.insert(sjtu::pair< sjtu::pair<int,int>,sjtu::string >(tmp,trainID));
+			Train[Road.find(res)].push_back(x.trainID);
 		}
 	Road.modify(st,k); 
-	puts("0");
 }
 
 void TrainManagement::query_train(const std::string &trainID_,const Date &date){
@@ -287,32 +284,30 @@ void TrainManagement::query_train(const std::string &trainID_,const Date &date){
 	if(!pos.count(trainID)||pos.find(trainID).rel==2)return void(puts("-1"));
 	train x=pos.find(trainID);
 	if(x.saleDateR<date||date<x.saleDateL)return void(puts("-1"));
-	trainID.print();
-	printf(" %c\n",x.Type);
+	std::cout<<trainID<<' '<<x.Type<<std::endl;
 	int k=date-x.saleDateL,cost=0;
 	Date now(date.m,date.d,x.startTime.hr,x.startTime.mi);
 	for(int i=0;i<x.stationNum;i++){
-		x.stations[i].print();
-		putchar(' ');
+		std::cout<<x.stations[i]<<' ';
 		if(i==0){
-			printf("xx-xx xx:xx -> ");
+			std::cout<<"xx-xx xx:xx -> ";
 			now.print();
 			now+=x.travelTimes[i];
 		}else if(i==x.stationNum-1){
 			cost+=x.prices[i-1];
 			now.print();
-			printf(" -> xx-xx xx:xx");
+			std::cout<<" -> xx-xx xx:xx";
 		}else{
 			now.print();
-			printf(" -> ");
+			std::cout<<" -> ";
 			now+=x.stopoverTimes[i-1];
 			now.print();
 			now+=x.travelTimes[i];
 			cost+=x.prices[i-1];
 		}
-		printf(" %d ",cost); 
-		if(i==x.stationNum-1)puts("x");
-		else printf("%d\n",x.LeftTicket[k][i]);
+		std::cout<<' '<<cost<<' ';
+		if(i==x.stationNum-1)std::cout<<'x'<<std::endl;
+		else std::cout<<x.LeftTicket[k][i]<<std::endl;
 	}
 }
 
@@ -323,13 +318,9 @@ Ticket TrainManagement::get_ticket(const sjtu::string &trainID,const Date &date,
 
 void TrainManagement::Update_ticket(const Ticket &t){
 	train now=pos.find(t.trainID);
-	int id=Pos[t.trainID.change()],l=T[id].find(t.From),r=T[id].find(t.To);
-//	Ticket tmp=t;
-//	tmp.print();
-//	puts("");
-//	std::cerr<<t.trainID<<','<<t.TimeL-T[id].st[l]<<std::endl;
-	now.Update_ticket(t.TimeL-T[id].st[l],l,r,t.num); 
+	now.Update_ticket(t.TimeL,t.From,t.To,t.num); 
 	pos.modify(t.trainID,now);
+//	std::cout<<"OK1"<<std::endl;
 }
 
 int ticket_num;
@@ -350,23 +341,19 @@ void sort(int l,int r){
 }
 
 void TrainManagement::query_ticket(const std::string &From,const std::string &To,const Date &date,bool flag){
-//		std::cerr<<"OK"<<std::endl;
 	sjtu::pair<sjtu::string,sjtu::string> road(From,To);
 	if(!Road.count(road))return void(puts("0"));
 	int k=Road.find(road);
 	ticket_num=0;
-	sjtu::pair<int,int> last(k,0),now=Train.upper_bound(last);
-	while(now.first==k&&now!=last){ 
-		last=now;
-		now=Train.upper_bound(last);
-		Ticket x=pos.find(Train.find(last)).get_ticket(From,To,date);
+	for(int i=0;i<Train[k].size();i++){
+		Ticket x=pos.find(Train[k][i]).get_ticket(From,To,date);
 		if(x.trainID.size()==0)continue;
 		A[++ticket_num]=x;
 	}
 	cmp=flag==0?cmp1:cmp2;
 	sort(1,ticket_num);
 	
-	printf("%d\n",ticket_num);
+	std::cout<<ticket_num<<std::endl;
 	for(int i=1;i<=ticket_num;i++)A[i].print();
 }
 
@@ -376,25 +363,20 @@ Transfer_Ticket TrainManagement::get_second(const Ticket &now,const sjtu::string
 	int k=Road.find(road);
 	Transfer_Ticket ret,tmp;
 	bool First=1;
-	sjtu::pair<int,int> last(k,0),Now=Train.upper_bound(last);
-	while(Now.first==k&&Now!=last){ 
-		last=Now;
-		Now=Train.upper_bound(last);
-		sjtu::string id=Train.find(last);
-		if(id==now.trainID)continue;
-		sjtu::pair<int,Ticket>B=pos.find(id).get_ticket2(now.To,To,now.TimeR);
-		if(B.first<0)continue;
-		tmp=Transfer_Ticket(now,B.second,B.first);
-		if(First)ret=tmp;
-		else if(Cmp(tmp,ret))ret=tmp;
-		First=0; 
+	for(int i=0;i<Train[k].size();i++){
+		if(Train[k][i]==now.trainID)continue;
+		 sjtu::pair<int,Ticket>B=pos.find(Train[k][i]).get_ticket2(now.To,To,now.TimeR);
+		 if(B.first<0)continue;
+		 tmp=Transfer_Ticket(now,B.second,B.first);
+		 if(First)ret=tmp;
+		 else if(Cmp(tmp,ret))ret=tmp;
+		 First=0; 
 	}
 	if(First==1)return -1;
 	return ret;
 }
 
 void TrainManagement::query_transfer(const std::string &From_,const std::string &To_,const Date &date,bool flag){
-//	return void(puts("0"));
 	sjtu::string last(""),now=pos.upper_bound(last),From(From_),To(To_);
 	bool First=1;
 	Cmp=flag==0?Cmp1:Cmp2;
@@ -403,19 +385,16 @@ void TrainManagement::query_transfer(const std::string &From_,const std::string 
 		train x=pos.find(now);
 		last=now;
 		now=pos.upper_bound(last);
-		if(x.rel!=1)continue;
-		int id=Pos[last.change()];
-		if(!T[id].pos.count(From_))continue;
-		int l=T[id].find(From);
-		if(date<T[id].st[l]||T[id].st[l]+T[id].day<date)continue;
-		Date L=T[id].st[l],datenow(date);
+		if(x.rel!=1||x.find(From)==-1)continue;
+		if(date<x.get_start(From)||x.get_start(From,1)<date)continue;
+		Date L=x.get_start(From),datenow(date);
 		int k=datenow-L;
 		datenow.hr=L.hr,datenow.mi=L.mi;
 		Ticket fi;
 		fi.trainID=last;
 		fi.From=From;
 		fi.TimeL=datenow;
-		for(int i=l;i<x.stationNum-1;i++){
+		for(int i=x.find(From);i<x.stationNum-1;i++){
 			fi.To=x.stations[i+1];
 			fi.cost+=x.prices[i];
 			if(fi.num>x.LeftTicket[k][i])fi.num=x.LeftTicket[k][i];
@@ -432,7 +411,7 @@ void TrainManagement::query_transfer(const std::string &From_,const std::string 
 				}
 			}
 			
-			if(i+1!=x.stationNum-1){
+			if(i!=x.stationNum-1){
 				fi.time+=x.stopoverTimes[i];
 				datenow+=x.stopoverTimes[i];
 			}
@@ -448,6 +427,6 @@ void TrainManagement::query_transfer(const std::string &From_,const std::string 
 void TrainManagement::Reset(){
 	pos.clean();
 	Road.clean();
-	Train.clean();
+	for(int i=0;i<M*M*M>>1;i++)Train[i].clear();
 }
 

@@ -22,10 +22,6 @@ namespace sjtu {
         int size() const {
             return len;
         }
-        
-        void print(){
-        	printf("%s",alpha);
-		}
 
         string(const string &other) {
             for (int i = 0; i < other.size(); i++)
@@ -33,12 +29,6 @@ namespace sjtu {
             alpha[other.size()] = '\0';
             len = other.size();
         }
-        
-        std::string change() const{
-			std::string ret;
-			for(int i=0;i<len;i++)ret.push_back(alpha[i]);
-			return ret;
-		} 
         
         string(const std::string &other){
         	for(int i=0;i<other.size();i++)alpha[i]=other[i];
