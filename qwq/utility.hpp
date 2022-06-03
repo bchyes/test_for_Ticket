@@ -35,7 +35,7 @@ namespace sjtu {
         }
         
         bool operator<(const pair &other)const{
-        	return first<other.first||first==other.first&&second<other.second;
+        	return first<other.first||(first==other.first&&second<other.second);
         }
         
         bool operator == (const pair &other)const{

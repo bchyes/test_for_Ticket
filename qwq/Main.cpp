@@ -35,7 +35,7 @@ Command find_Command(std::string s){
 int get_number(std::string str){
 	if(str.size()==0)return -1;
 	int ret=0;
-	for(int i=0;i<str.size();i++)
+	for(int i=0;i<(int)str.size();i++)
 		if(isdigit(str[i]))ret=ret*10+str[i]-48;
 	return ret;
 }
@@ -84,7 +84,6 @@ void Add_train(){
 void Buy_ticket(const std::string &username_,const std::string &trainID_,const Date &date,const int &num,const std::string &fr,const std::string &to,const std::string &flag){
 	sjtu::string username(username_),trainID(trainID_);
 	Ticket t=train.get_ticket(trainID,date,fr,to);
-//	std::cerr<<t.num<<' '<<num<<std::endl;
 	if(t.trainID.size()==0||!user.Ask_Login(username))return void(puts("-1"));
 	if(t.num<num){
 		t.num=num;
@@ -111,16 +110,13 @@ void Refund_ticket(const std::string &username_,const std::string &kth){
 		t.num=-t.num;
 		train.Update_ticket(t);
 	}
-	k=0;
-	type2 now=ticket.next_ticket(t.trainID,k);//(username,Ticket) 
-	while(now.first.size()>0){
-		Ticket nd=now.second;
-		Ticket tmp=train.get_ticket(nd.trainID,nd.TimeL,nd.From,nd.To);
-		if(tmp.num>=nd.num){
+	const sjtu::vector<sjtu::pair<type1,type2> > &T=ticket.all_ticket(t.trainID);
+	for(int i=0;i<(int)T.size();i++){
+		Ticket nd = T[i].second.second;
+		if(train.query_ticket(t.trainID,nd.TimeL,nd.From,nd.To)>=nd.num){
 			train.Update_ticket(nd);
-			ticket.Update_ticket(now.first,nd,k);
+			ticket.Update_ticket(T[i].second.first,nd,T[i].first.second);
 		}
-		now=ticket.next_ticket(t.trainID,k);
 	}
 	puts("0");
 }
@@ -141,7 +137,7 @@ void Process(){//读取指令并执行
 	
 	token_scanner str;
 	std::string *p=Str-97;
-//	int CT=0;
+	int CT=0;
 	while(1){
 		bool flag=0,rd=str.read();
 		timestamp=get_number(str.next_token());
@@ -152,13 +148,13 @@ void Process(){//读取指令并执行
 		std::string s=str.next_token(),c;
 		while(s.size()>0){
 			c=str.next_token();
-			p[s[1]]=c;
+			p[(int)s[1]]=c;
 			s=str.next_token();
 		}
-//		CT++;
-//		if(CT%1000==0){
-//			std::cerr<<CT/1000<<std::endl;
-//		}
+		CT++;
+		if(CT%1000==0){
+			std::cerr<<CT/1000<<std::endl;
+		}
 		switch(cmd){
 			case add_user: user.add_user(p['c'],p['u'],p['p'],p['n'],p['m'],get_number(p['g']));break;
 			case login: user.login(p['u'],p['p'])?online[p['u']]=1:233;break;
@@ -177,7 +173,7 @@ void Process(){//读取指令并执行
 			case refund_ticket: Refund_ticket(p['u'],p['n']);break; 
 			case query_order: Query_order(p['u']);break;
 			
-//			case rollback: Rollback(p['t']);break;
+			case rollback: break;
 			case clean: Reset();break; 
 			case exit_: flag=1;break; 
 		}

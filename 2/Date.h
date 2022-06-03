@@ -14,14 +14,14 @@ struct Date{
 	}
 	
 	bool Compare(const Date &res){
-		return hr<res.hr||(hr==res.hr&&mi<=res.mi);
+		return hr<res.hr||hr==res.hr&&mi<=res.mi;
 	}
 	
 	int del(const Date &res){
 		return (hr-res.hr)*60+mi-res.mi;
 	}
 	
-	void print()const{
+	void print(){
 		printf("0%d-%02d %02d:%02d",m,d,hr,mi);
 	} 
 	
@@ -46,7 +46,7 @@ struct Date{
 	}
 	
 	bool operator < (const Date &res)const{
-		return m<res.m|| (m==res.m&&d<res.d);
+		return m<res.m|| m==res.m&&d<res.d;
 	}
 	
 	Date():m(0),d(0),hr(0),mi(0){};

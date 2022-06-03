@@ -23,12 +23,12 @@ namespace sjtu {
             return len;
         }
         
-        void print(){
+        void print()const{
         	printf("%s",alpha);
 		}
 
         string(const string &other) {
-            for (int i = 0; i < other.size(); i++)
+            for (int i = 0; i < (int)other.size(); i++)
                 alpha[i] = other.alpha[i];
             alpha[other.size()] = '\0';
             len = other.size();
@@ -41,7 +41,7 @@ namespace sjtu {
 		} 
         
         string(const std::string &other){
-        	for(int i=0;i<other.size();i++)alpha[i]=other[i];
+        	for(int i=0;i<(int)other.size();i++)alpha[i]=other[i];
         	alpha[other.size()]='\0';
         	len=other.size();
 		}

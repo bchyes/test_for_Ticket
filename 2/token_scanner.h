@@ -7,7 +7,7 @@
 class token_scanner{
 private:
 	char buffer[10005];
-	int sz,point;
+	int point,sz;
 	char delimiter;
 
 public:
@@ -24,8 +24,7 @@ public:
 	bool read(){
 		sz=0,point=0;
 		static char c;
-		while(1){
-			c=getchar();
+		while(c=getchar()){
 			if(c==-1)return 0;
 			if(c=='\n')break;
 			buffer[sz++]=c;

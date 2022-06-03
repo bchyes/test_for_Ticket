@@ -123,7 +123,7 @@ void User_Management::query_profile(const std::string &cur_username_,const std::
 	sjtu::string cur_username(cur_username_),username(username_);
 	if(!pos.count(cur_username)||!pos.count(username))return void(puts("-1"));
 	User Cur=pos.find(cur_username),Ask=pos.find(username);
-	if(Cur.Login==0||username_!=cur_username_&&Cur.privilege<=Ask.privilege)return void(puts("-1"));
+	if(Cur.Login==0||(username_!=cur_username_&&Cur.privilege<=Ask.privilege))return void(puts("-1"));
 	std::cout<<Ask.username<<' '<<Ask.name<<' '<<Ask.mailAddr<<' '<<Ask.privilege<<std::endl;
 }
 
@@ -131,7 +131,7 @@ void User_Management::modify_profile(const std::string &cur_username_,const std:
 	sjtu::string cur_username(cur_username_),username(username_);
 	if(!pos.count(cur_username)||!pos.count(username))return void(puts("-1"));
 	User Cur=pos.find(cur_username),Ask=pos.find(username);
-	if(Cur.Login==0||username_!=cur_username_&&Cur.privilege<=Ask.privilege||privilege>=Cur.privilege)return void(puts("-1"));
+	if(Cur.Login==0||(username_!=cur_username_&&Cur.privilege<=Ask.privilege)||privilege>=Cur.privilege)return void(puts("-1"));
 	if(pwd.size()>0)strcpy(Ask.password,pwd.c_str());
 	if(name.size()>0)strcpy(Ask.name,name.c_str());
 	if(mailAddr.size()>0)strcpy(Ask.mailAddr,mailAddr.c_str());
