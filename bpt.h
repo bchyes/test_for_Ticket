@@ -13,7 +13,7 @@
 #include "map.hpp"
 
 namespace sjtu {
-    template<class Key, class T, int M = 30, class Compare= std::less<Key> >
+    template<class Key, class T, int M = 80, class Compare= std::less<Key> >
     class bpt {
     private:
         typedef pair<Key, T> value_type;
@@ -827,7 +827,7 @@ namespace sjtu {
             }
             for (int i = 0; i < now.length; i++)
                 if (!cpy(key, now.value[i].first) && !cpy(now.value[i].first, key)) {
-                    if (hs.size() == m) {
+                    if (hs.Size() >= 2621440) {
                         hs.erase(hs.begin());
                     }
                     hs.insert(now.value[i]);
