@@ -89,7 +89,6 @@ void User_Management::add_user(const std::string &cur_username_,const std::strin
 		puts("0");
 		return;
 	}
-	
 	if(!pos.count(cur_username)||pos.count(username))return void(puts("-1"));
 	if(!pos.find(cur_username).Login||privilege>=pos.find(cur_username).privilege)return void(puts("-1"));
 	pos.insert( sjtu::pair<size_t,User>( username,User(username_,pwd,name,mailAddr,privilege) ) );

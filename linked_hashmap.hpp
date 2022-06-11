@@ -66,10 +66,6 @@ namespace sjtu {
         Equal e;
         int size_ = 0;
 
-        long long Size(){
-            return 1LL*size_*(sizeof(node)+sizeof(value_type));
-        }
-
         class const_iterator;
 
         class iterator {

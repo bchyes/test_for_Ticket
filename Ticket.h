@@ -10,39 +10,10 @@
 #include "vector.hpp"
 #include "Date.h"
 
-struct Ticket2{
-    sjtu::string trainID;
-    Date TimeL,TimeR;
-    int cost,time,num;
-    Ticket2():cost(-1){};
-
-    Ticket2(const sjtu::string &id, const Date &l, const Date &r,
-           const int &cost_, const int &Num, const int tm = 0) :
-            trainID(id),
-            TimeL(l), TimeR(r),
-            cost(cost_), time(tm), num(Num) {}
-    void print(const std::string &f,const std::string &t)const {
-        trainID.print();
-        putchar(' ');
-        std::cout<<f;
-        putchar(' ');
-        TimeL.print();
-        printf(" -> ");
-        std::cout<<t;
-        putchar(' ');
-        TimeR.print();
-        printf(" %d %d\n", cost, num);
-
-    }
-};
-
 struct Ticket {
     sjtu::string trainID, From, To;
     Date TimeL, TimeR;
     int cost, time, num;
-
-    Ticket(const Ticket2 &a,const std::string &f,const std::string &t):
-        trainID(a.trainID),From(f),To(t),TimeL(a.TimeL),TimeR(a.TimeR),cost(a.cost),time(a.time),num(a.num){}
 
     Ticket() : cost(0), time(0), num(2e9) {}
 
@@ -103,11 +74,11 @@ bool Cmp2(const Transfer_Ticket &a, const Transfer_Ticket &b) {
     return a.B.trainID < b.B.trainID;
 }
 
-bool cmp1(const Ticket2 &a, const Ticket2 &b) {
+bool cmp1(const Ticket &a, const Ticket &b) {
     return a.time < b.time || (a.time == b.time && a.trainID < b.trainID);
 }
 
-bool cmp2(const Ticket2 &a, const Ticket2 &b) {
+bool cmp2(const Ticket &a, const Ticket &b) {
     return a.cost < b.cost || (a.cost == b.cost && a.trainID < b.trainID);
 }
 

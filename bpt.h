@@ -20,20 +20,13 @@ struct std::hash<sjtu::pair<size_t, int>> {
 };
 
 template<>
-struct std::hash<sjtu::pair<size_t, size_t>> {
-    size_t operator()(const sjtu::pair<size_t, size_t> &key) const {
-        return hash<size_t>()(key.first) + hash<size_t>()(key.second);
-    }
-};
-
-template<>
 struct std::hash<sjtu::pair<sjtu::pair<size_t, size_t>, int>> {
     size_t operator()(const sjtu::pair<sjtu::pair<size_t, size_t>, int> &key) const {
         return hash<size_t>()(key.first.first) + hash<size_t>()(key.first.second) + hash<int>()(key.second);
     }
 };
 namespace sjtu {
-    template<class Key, class T, class Hash=std::hash<Key>, int M = 20, class Compare= std::less<Key> >
+    template<class Key, class T, class Hash=std::hash<Key>, int M = 30, class Compare= std::less<Key> >
     class bpt {
     private:
         typedef pair<Key, T> value_type;
@@ -924,46 +917,7 @@ namespace sjtu {
             file.close();
         }
 
-        inline void insert(const Key &key,const T &value){
-            insert(value_type(key,value));
-        }
-
-        sjtu::pair<bool, T> find2(const Key &key) {//按照key进行寻找
-            if (hs.count(key)) {
-                return sjtu::pair<bool ,T>(1,hs.find(key)->second);
-            }
-            file.open(file_name);
-            file.read(reinterpret_cast<char *>(&root), sizeof(node));
-            if (!root.length) throw int();
-            now = root;//!
-            while (!now.is_leave) {
-                /*int i;
-                for (i = 0; i < now.length - 1; i++)
-                    if (cpy(key, now.value[i].first))
-                        break;*/
-                int l = 0, r = now.length - 2;
-                while (l <= r) {
-                    int mid = (l + r) >> 1;
-                    if (cpy(key, now.value[mid].first)) r = mid - 1;
-                    else l = mid + 1;
-                }
-                file.seekg(now.son[l]);
-                file.read(reinterpret_cast<char *>(&now), sizeof(node));
-            }
-            for (int i = 0; i < now.length; i++)
-                if (!cpy(key, now.value[i].first) && !cpy(now.value[i].first, key)) {
-                    while (hs.Size() >= 3ll*1024*1024) {
-                        hs.erase(hs.begin());
-                    }
-                    hs.insert(now.value[i]);
-                    file.close();
-                    return sjtu::pair<bool,T>(1,now.value[i].second);
-                }
-            file.close();
-            return sjtu::pair<bool, T>(0, T());
-        }
-        
-        T find(const Key &key) {//按照key进行寻找
+        sjtu::pair<bool, T> find(const Key &key) {//按照key进行寻找
             if (hs.count(key)) {
                 return hs.find(key)->second;
             }
@@ -987,15 +941,15 @@ namespace sjtu {
             }
             for (int i = 0; i < now.length; i++)
                 if (!cpy(key, now.value[i].first) && !cpy(now.value[i].first, key)) {
-                    while (hs.Size() >= 3ll*1024*1024) {
+                    if (hs.size() == m) {
                         hs.erase(hs.begin());
                     }
                     hs.insert(now.value[i]);
                     file.close();
-                    return now.value[i].second;
+                    return sjtu::pair<bool,T>(1,now.value[i].second);
                 }
             file.close();
-            throw int();
+            return sjtu::pair<bool, T>(0, T());
         }
 
         void erase(const Key &key) {
