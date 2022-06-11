@@ -8,13 +8,11 @@
 #include <cmath>
 #include <fstream>
 
-std::hash<std::string> H;
-
 namespace sjtu {
 
     class string {
     private:
-        char alpha[35];
+        char alpha[65];
         int len = 0;
     public:
         string() {

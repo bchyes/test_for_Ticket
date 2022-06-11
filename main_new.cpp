@@ -82,10 +82,20 @@ void Add_train(){
 
 void Buy_ticket(const std::string &username_,const std::string &trainID_,const Date &date,const int &num,const std::string &fr,const std::string &to,const std::string &flag){
     sjtu::string username(username_),trainID(trainID_);
-    if(!user.Ask_Login(username))return void(puts("-1"));
-    sjtu::pair<int,Ticket> now=train.Calc_Price(trainID,date,sjtu::string(fr),sjtu::string(to),num,flag.size()>0&&flag[0]=='t');
-    if(now.first!=-1)ticket.insert_ticket(username,timestamp,now.second,now.first);
-    else puts("-1");
+    Ticket t=train.get_ticket(trainID,date,fr,to,num);
+    if(t.trainID.size()==0||!user.Ask_Login(username))return void(puts("-1"));
+    if(t.num<num){
+        t.num=num;
+        if(flag.size()>0&&flag[0]=='t'){
+            ticket.insert_ticket(username,timestamp,t,1);
+            puts("queue");
+        }else puts("-1");
+        return;
+    }
+    t.num=num;
+    train.Update_ticket(t);
+    ticket.insert_ticket(username,timestamp,t,0);
+    printf("%lld\n",1LL*num*t.cost);
 }
 
 void Refund_ticket(const std::string &username_,const std::string &kth){
