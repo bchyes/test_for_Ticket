@@ -17,9 +17,10 @@ struct Date{
 		return hr<res.hr||(hr==res.hr&&mi<=res.mi);
 	}
 	
-	int del(const Date &res){
+	int del(const Date &res)const {
 		return (hr-res.hr)*60+mi-res.mi;
 	}
+
 	
 	void print()const{
 		printf("0%d-%02d %02d:%02d",m,d,hr,mi);
@@ -66,6 +67,7 @@ struct Date{
 	int operator - (const Date &res)const{
 		int ret=0;
 		if(m==res.m)return d-res.d;
+		else if(m<res.m)return -233;
 		int D=res.d,M=res.m;
 		while(M<m){
 			ret+=DAY[M++]-D+1;
@@ -73,15 +75,9 @@ struct Date{
 		}
 		return ret+d-D;
 	}
+
+	int get_time(const Date &res) const {
+		return del(res)+((*this)-res)*1440;
+	}
+
 };
-
-/*
--：减出天数的减法
-
-(string,各个数据)：构造函数
-
-+=加的是 分钟
-
-<暂定比天数
-
-*/

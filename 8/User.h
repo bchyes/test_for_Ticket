@@ -6,7 +6,7 @@
 
 #include "utility.hpp"
 #include "bpt.h" 
-#include "string.hpp"
+#include "linked_hashmap.hpp"
 
 class User_Management;
 
@@ -14,10 +14,9 @@ class User{
 private:
     char username[22];
     char password[32];
-    char name[32];
+    char name[22];
     char mailAddr[32];
-    int privilege;
-	bool Login;
+    int privilege,Login;
 public:
 	User();
 	
@@ -29,16 +28,16 @@ public:
 	
 	void refund_ticket(const int &place);//refund_ticket command 
 	
-	
 	friend class User_Management;
 };
 
 class User_Management{
 private:
-public:
 	sjtu::bpt<size_t,User> pos;//UserID���û���ӳ�� 
+	sjtu::linked_hashmap<size_t,bool>log;
+public:
 	User_Management();
-	
+
 	~User_Management();
 	
     void add_user(const std::string &cur_username,const std::string &username,const std::string &pwd,const std::string &name,
@@ -78,7 +77,12 @@ User::User(const std::string &username_,const std::string &password_,const std::
 
 User::~User(){}
 
-User_Management::User_Management():pos("file_user.dat","file_user_delete.dat"){}
+User_Management::User_Management():pos("file_user.dat","file_user_delete.dat"){
+	if(pos.empty())return;
+	const sjtu::vector< sjtu::pair<size_t,User> > &vec=pos.traverse_val(0,(size_t)-1);
+	for(int i=0;i<vec.size();i++)
+		log[vec[i].first]=vec[i].second.Login;
+}
 
 User_Management::~User_Management(){}
 
@@ -86,24 +90,27 @@ void User_Management::add_user(const std::string &cur_username_,const std::strin
 	size_t cur_username=H(cur_username_),username=H(username_);
 	if(pos.empty()){
 		pos.insert( sjtu::pair<size_t,User>( username,User(username_,pwd,name,mailAddr,privilege) ) );
+		log[username]=0;
 		puts("0");
 		return;
 	}
 	
-	if(!pos.count(cur_username)||pos.count(username))return void(puts("-1"));
-	if(!pos.find(cur_username).Login||privilege>=pos.find(cur_username).privilege)return void(puts("-1"));
+	if(!log.count(cur_username)||log.count(username))return void(puts("-1"));
+	if(!log[cur_username]||privilege>=pos.find(cur_username).privilege)return void(puts("-1"));
 	pos.insert( sjtu::pair<size_t,User>( username,User(username_,pwd,name,mailAddr,privilege) ) );
+	log[username]=0;
 	puts("0");
 }
 
 bool User_Management::login(const std::string &username_,const std::string &pwd){
 	size_t username=H(username_);
-	if(!pos.count(username)||pos.find(username).Login)return puts("-1"),0;
-	std::string Pwd(pos.find(username).password);
+	if(!log.count(username)||log[username]==1)return puts("-1"),0;
+	User now=pos.find(username);
+	std::string Pwd(now.password);
 	if(Pwd==pwd){
-		User tmp=pos.find(username);
-		tmp.Login=1;
-		pos.modify(username,tmp);
+		now.Login=1;
+		pos.modify(username,now);
+		log[username]=1;
 		return puts("0"),1;
 	}
 	return puts("-1"),0;
@@ -111,10 +118,11 @@ bool User_Management::login(const std::string &username_,const std::string &pwd)
 
 bool User_Management::logout(const std::string &username_,const bool &out){
 	size_t username=H(username_);
-	if(pos.count(username)&&pos.find(username).Login==1){
+	if(log.count(username)&&log[username]==1){
 		User tmp=pos.find(username);
 		tmp.Login=0;
 		pos.modify(username,tmp);
+		log[username]=0;
 		return out?233:puts("0"),1;
 	}
 	return out?233:puts("-1"),0;
@@ -122,16 +130,17 @@ bool User_Management::logout(const std::string &username_,const bool &out){
 
 void User_Management::query_profile(const std::string &cur_username_,const std::string &username_){
 	size_t cur_username=H(cur_username_),username=H(username_);
-	if(!pos.count(cur_username)||!pos.count(username))return void(puts("-1"));
-	User Cur=pos.find(cur_username),Ask=pos.find(username);
+	if(!log.count(cur_username)||!log.count(username))return void(puts("-1"));
+	const User &Cur=pos.find(cur_username),&Ask=pos.find(username);
 	if(Cur.Login==0||(username_!=cur_username_&&Cur.privilege<=Ask.privilege))return void(puts("-1"));
 	std::cout<<Ask.username<<' '<<Ask.name<<' '<<Ask.mailAddr<<' '<<Ask.privilege<<std::endl;
 }
 
 void User_Management::modify_profile(const std::string &cur_username_,const std::string &username_,const std::string &pwd,const std::string &name,const std::string &mailAddr,const int &privilege){
 	size_t cur_username=H(cur_username_),username=H(username_);
-	if(!pos.count(cur_username)||!pos.count(username))return void(puts("-1"));
-	User Cur=pos.find(cur_username),Ask=pos.find(username);
+	if(!log.count(cur_username)||!log.count(username))return void(puts("-1"));
+	const User &Cur=pos.find(cur_username);
+	User Ask=pos.find(username);
 	if(Cur.Login==0||(username_!=cur_username_&&Cur.privilege<=Ask.privilege)||privilege>=Cur.privilege)return void(puts("-1"));
 	if(pwd.size()>0)strcpy(Ask.password,pwd.c_str());
 	if(name.size()>0)strcpy(Ask.name,name.c_str());
@@ -143,7 +152,7 @@ void User_Management::modify_profile(const std::string &cur_username_,const std:
 
 bool User_Management::Ask_Login(const sjtu::string &username_){
 	size_t username=H(username_.change());
-	return pos.count(username)&&pos.find(username).Login;
+	return log.count(username)&&log[username];
 }
 
 void User_Management::Reset(){

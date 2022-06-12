@@ -81,9 +81,11 @@ void Add_train(){
 }
 
 void Buy_ticket(const std::string &username_,const std::string &trainID_,const Date &date,const int &num,const std::string &fr,const std::string &to,const std::string &flag){
-    sjtu::string username(username_),trainID(trainID_);
-    Ticket t=train.get_ticket(trainID,date,fr,to,num);
-    if(t.trainID.size()==0||!user.Ask_Login(username))return void(puts("-1"));
+    sjtu::string username(username_);
+    if(!user.Ask_Login(username))return void(puts("-1"));
+    Ticket2 tx=train.get_ticket(trainID_,date,fr,to,num);
+    if(tx.cost==-1)return void(puts("-1"));
+    Ticket t(tx,fr,to);
     if(t.num<num){
         t.num=num;
         if(flag.size()>0&&flag[0]=='t'){
@@ -112,6 +114,7 @@ void Refund_ticket(const std::string &username_,const std::string &kth){
     const sjtu::vector<sjtu::pair<type1,type2> > &T=ticket.all_ticket(t.trainID);
     for(int i=0;i<(int)T.size();i++){
         Ticket nd = T[i].second.second;
+        //std::cerr<<"OK"<<std::endl;
         if(train.query_ticket(t.trainID,nd.TimeL,nd.From,nd.To)>=nd.num){
             train.Update_ticket(nd);
             ticket.Update_ticket(T[i].second.first,nd,T[i].first.second);
@@ -136,7 +139,7 @@ void Process(){//��ȡָ�ִ��
 
     token_scanner str;
     std::string *p=Str;
-    int CT=0;
+    //int CT=0;
     while(1){
         bool flag=0,rd=str.read();
         timestamp=get_number(str.next_token());
@@ -150,10 +153,10 @@ void Process(){//��ȡָ�ִ��
             p[(int)s[1]]=c;
             s=str.next_token();
         }
-        CT++;
-        if(CT%1000==0){
-            std::cerr<<CT/1000<<std::endl;
-        }
+        //CT++;
+        //if(CT%1000==0){
+        //		std::cerr<<CT/1000<<std::endl;
+        //	}
         switch(cmd){
             case add_user: user.add_user(p['c'],p['u'],p['p'],p['n'],p['m'],get_number(p['g']));break;
             case login: user.login(p['u'],p['p'])?online[p['u']]=1:233;break;
@@ -164,13 +167,13 @@ void Process(){//��ȡָ�ִ��
             case add_train: Add_train();break;
             case delete_train: train.delete_train(p['i']);break;
             case release_train: train.release_train(p['i'],timestamp);break;
-            case query_train: train.query_train(p['i'],p['d']);break;
-            case query_ticket: train.query_ticket(p['s'],p['t'],p['d'],p['p'].size()>0&&p['p'][0]=='c');break;
-            case query_transfer: train.query_transfer(p['s'],p['t'],p['d'],p['p'].size()>0&&p['p'][0]=='c');break;
+                case query_train: train.query_train(p['i'],p['d']);break;
+                case query_ticket: train.query_ticket(p['s'],p['t'],p['d'],p['p'].size()>0&&p['p'][0]=='c');break;
+                case query_transfer: train.query_transfer(p['s'],p['t'],p['d'],p['p'].size()>0&&p['p'][0]=='c');break;
 
             case buy_ticket: Buy_ticket(p['u'],p['i'],p['d'],get_number(p['n']),p['f'],p['t'],p['q']);break;
-            case refund_ticket: Refund_ticket(p['u'],p['n']);break;
-            case query_order: Query_order(p['u']);break;
+                case refund_ticket: Refund_ticket(p['u'],p['n']);break;
+                case query_order: Query_order(p['u']);break;
 
             case rollback: break;
             case clean: Reset();break;
@@ -187,8 +190,8 @@ void Process(){//��ȡָ�ִ��
 }
 
 int main(){
-     //freopen("1.in","r",stdin);
-     //freopen("1.ans","w",stdout);
+    freopen("1.in","r",stdin);
+    freopen("1.ans","w",stdout);
     Process();
     return 0;
 }

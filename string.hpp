@@ -8,11 +8,13 @@
 #include <cmath>
 #include <fstream>
 
+std::hash<std::string> H;
+
 namespace sjtu {
 
     class string {
     private:
-        char alpha[65];
+        char alpha[25];
         int len = 0;
     public:
         string() {
@@ -35,9 +37,7 @@ namespace sjtu {
         }
         
         std::string change() const{
-			std::string ret;
-			for(int i=0;i<len;i++)ret.push_back(alpha[i]);
-			return ret;
+            return std::string(alpha);
 		} 
         
         string(const std::string &other){
