@@ -113,7 +113,7 @@ void Process() {//��ȡָ�ִ��
     while (1) {
         bool flag = 0, rd = str.read();
         timestamp = get_number(str.next_token());
-        //if (timestamp == 184157) break;
+        //if (timestamp == 184165) break;
         printf("[%d] ", timestamp);
         for (int i = 'a'; i < 'z'; i++)Str[i] = "";
         Command cmd = find_Command(str.next_token());
