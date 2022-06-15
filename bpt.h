@@ -1018,7 +1018,7 @@ namespace sjtu {
             file_leaves.read(reinterpret_cast<char *>(&now_l), sizeof(node_leaves));
             for (int i = 0; i < now_l.length; i++)
                 if (!cpy(key, now_l.value[i].first) && !cpy(now_l.value[i].first, key)) {
-                    if (hs.size() == m) {
+                    if (hs.Size() >= 3ll * 1024 * 1024) {
                         hs.erase(hs.begin());
                     }
                     //!
@@ -1057,7 +1057,7 @@ namespace sjtu {
             file_leaves.read(reinterpret_cast<char *>(&now_l), sizeof(node_leaves));
             for (int i = 0; i < now_l.length; i++)
                 if (!cpy(key, now_l.value[i].first) && !cpy(now_l.value[i].first, key)) {
-                    if (hs.size() == m) {
+                    if (hs.Size() >= 3ll * 1024 * 1024) {
                         hs.erase(hs.begin());
                     }
                     //!
