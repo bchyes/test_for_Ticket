@@ -33,7 +33,7 @@ public:
 
 class User_Management{
 private:
-	sjtu::bpt<size_t,User,62,7> pos;//UserID���û���ӳ��
+	sjtu::bpt<size_t,User,254,32> pos;//UserID���û���ӳ��
 	sjtu::linked_hashmap<size_t,bool>log;
 public:
 	User_Management();
