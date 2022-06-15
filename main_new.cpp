@@ -196,8 +196,8 @@ int main() {
     //user.Print();
     //puts("----------");
     //train.Print();
-    freopen("1.in", "r", stdin);
-    freopen("1.ans", "w", stdout);
+    //freopen("1.in", "r", stdin);
+    //freopen("1.ans", "w", stdout);
     Process();
     return 0;
 }
