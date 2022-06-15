@@ -33,7 +33,7 @@ public:
 
 class User_Management{
 private:
-	sjtu::bpt<size_t,User> pos;//UserID���û���ӳ�� 
+	sjtu::bpt<size_t,User,62,7> pos;//UserID���û���ӳ��
 	sjtu::linked_hashmap<size_t,bool>log;
 public:
 	User_Management();
@@ -52,10 +52,15 @@ public:
     void modify_profile(const std::string &cur_username,const std::string &username,const std::string &pwd,const std::string &name,
 	 			  const std::string &mailAddr,const int &privilege);//modify_profile command 
 	 			
-	bool Ask_Login(const sjtu::string &username); 			
+	bool Ask_Login(const std::string &username); 			
 	
 	void Reset();
+
+	void Print();
 };
+void User_Management::Print(){
+	/*pos.print();*/
+}
 
 User::User(){
 	username[0]='\0';
@@ -77,7 +82,7 @@ User::User(const std::string &username_,const std::string &password_,const std::
 
 User::~User(){}
 
-User_Management::User_Management():pos("file_user.dat","file_user_delete.dat"){
+User_Management::User_Management():pos("file_user.dat","file_user2.dat"/*,"file_user_delete.dat","file_user2_delete.dat"*/){
 	if(pos.empty())return;
 	const sjtu::vector< sjtu::pair<size_t,User> > &vec=pos.traverse_val(0,(size_t)-1);
 	for(int i=0;i<vec.size();i++)
@@ -150,8 +155,8 @@ void User_Management::modify_profile(const std::string &cur_username_,const std:
 	std::cout<<Ask.username<<' '<<Ask.name<<' '<<Ask.mailAddr<<' '<<Ask.privilege<<std::endl;
 }
 
-bool User_Management::Ask_Login(const sjtu::string &username_){
-	size_t username=H(username_.change());
+bool User_Management::Ask_Login(const std::string &username_){
+	size_t username=H(username_);
 	return log.count(username)&&log[username];
 }
 

@@ -10,7 +10,6 @@
 #include "utility.hpp"
 #include "exceptions.hpp"
 #include "linked_hashmap.hpp"
-#include "map.hpp"
 
 template<>
 struct std::hash<sjtu::pair<size_t, int>> {
@@ -27,13 +26,13 @@ struct std::hash<sjtu::pair<size_t, size_t>> {
 };
 
 template<>
-struct std::hash<sjtu::pair<sjtu::pair<size_t, size_t>, int>> {
-    size_t operator()(const sjtu::pair<sjtu::pair<size_t, size_t>, int> &key) const {
-        return hash<size_t>()(key.first.first) + hash<size_t>()(key.first.second) + hash<int>()(key.second);
+struct std::hash<sjtu::pair<sjtu::pair<size_t, int>, int>> {
+    size_t operator()(const sjtu::pair<sjtu::pair<size_t, int>, int> &key) const {
+        return hash<size_t>()(key.first.first) + hash<int>()(key.first.second) + hash<int>()(key.second);
     }
 };
 namespace sjtu {
-    template<class Key, class T, class Hash=std::hash<Key>, int M = 20, class Compare= std::less<Key> >
+    template<class Key, class T, int M = 100, int N = 300, class Hash=std::hash<Key>, class Compare= std::less<Key> >
     class bpt {
     private:
         typedef pair<Key, T> value_type;
@@ -42,10 +41,17 @@ namespace sjtu {
             int length = 0;
             long long address = 0;
             long long father = -1;
-            value_type value[M];
+            Key value[M];
             long long son[M];
+            long long leave_address = -1;
+        };
+        struct node_leaves {
+            int length = 0;
+            value_type value[N];
             long long pre = -1;
             long long next = -1;
+            long long address = -1;
+            long long key_address = -1;
         };
         node root;
         node node_back;
@@ -55,20 +61,37 @@ namespace sjtu {
         node tmp_0;
         node new_tmp;
         node ept;
+        node_leaves tmp_l_;
+        node_leaves now_l;
+        node_leaves tmp_l;
+        node_leaves tmp_0_l;
+        node_leaves new_tmp_l;
+        node_leaves ept_l;
         sjtu::linked_hashmap<Key, T, Hash> hs;
         //sjtu::map<Key, T> hs;
         static const int m = 74669;
         std::fstream file;
-        std::fstream file_delete;
+        //std::fstream file_delete;
+        std::fstream file_leaves;
+        //std::fstream file_delete_leaves;
         std::string file_name;
-        std::string file_delete_name;
+        //std::string file_delete_name;
+        std::string file_leaves_name;
+        //std::string file_delete_leaves_name;
         Compare cpy;
         sjtu::vector<long long> delete_;
         int delete_num = 0;
+        sjtu::vector<long long> delete_leaves;
+        int delete_leaves_num = 0;
 
         void split(node &tmp, node &now) {
             value_type v_up;
-            tmp.length = M >> 1;
+            //tmp.length = N >> 1;
+            tmp_l.length = N >> 1;
+            //!
+            //file.seekp(tmp.address);
+            //file.write(reinterpret_cast<char *>(&tmp), sizeof(node));
+            //!
             if (!delete_num) {
                 file.seekp(0, std::fstream::end);
             } else {
@@ -77,32 +100,52 @@ namespace sjtu {
                 delete_num--;
                 file.seekg(x);
             }
-            //node new_tmp;
             new_tmp = ept;//置空
             new_tmp.address = file.tellp();//新取一个地址 可记录
             new_tmp.father = now.address;
-            if (tmp.next != -1) {//先将叶子节点的链表连起来
-                file.seekg(tmp.next);
-                //node tmp_0;
-                file.read(reinterpret_cast<char *>(&tmp_0), sizeof(node));
-                tmp_0.pre = new_tmp.address;
-                new_tmp.next = tmp_0.address;
-                file.seekp(tmp_0.address);
-                file.write(reinterpret_cast<char *>(&tmp_0), sizeof(node));
+            //!
+            if (!delete_leaves_num) {
+                file_leaves.seekp(0, std::fstream::end);
+            } else {
+                long long x = delete_leaves.back();
+                delete_leaves.pop_back();
+                delete_leaves_num--;
+                file_leaves.seekg(x);
             }
-            tmp.next = new_tmp.address;
-            new_tmp.pre = tmp.address;
-            file.seekp(tmp.address);
-            file.write(reinterpret_cast<char *>(&tmp), sizeof(node));
-            for (int i = 0; i < M - tmp.length; i++)//将原来tmp中的值拿一半到new_tmp中
-                new_tmp.value[i] = tmp.value[i + tmp.length];
-            new_tmp.length = M - tmp.length;
+            new_tmp_l = ept_l;//置空
+            new_tmp.leave_address = file_leaves.tellp();
+            new_tmp_l.address = new_tmp.leave_address;
+            new_tmp_l.key_address = new_tmp.address;
+            //!
+            if (tmp_l.next != -1) {//先将叶子节点的链表连起来
+                file_leaves.seekg(tmp_l.next);
+                file_leaves.read(reinterpret_cast<char *>(&tmp_0_l), sizeof(node_leaves));
+                tmp_0_l.pre = new_tmp.leave_address;
+                new_tmp_l.next = tmp_0_l.address;
+                file_leaves.seekp(tmp_0_l.address);
+                file_leaves.write(reinterpret_cast<char *>(&tmp_0_l), sizeof(node_leaves));
+            }
+            tmp_l.next = new_tmp_l.address;
+            new_tmp_l.pre = tmp_l.address;
+            file_leaves.seekp(tmp_l.address);
+            file_leaves.write(reinterpret_cast<char *>(&tmp_l), sizeof(node_leaves));
+            //!
+            for (int i = 0; i < N - tmp_l.length; i++)//将原来tmp中的值拿一半到new_tmp中
+                //new_tmp.value[i] = tmp.value[i + tmp.length],
+                new_tmp_l.value[i] = tmp_l.value[i + tmp_l.length];
+            new_tmp_l.length = N - tmp_l.length;
+            //!
+            //new_tmp.length = N - tmp.length;
             new_tmp.is_leave = 1;
             file.seekp(new_tmp.address);
             file.write(reinterpret_cast<char *>(&new_tmp), sizeof(node));
-            v_up = new_tmp.value[0];//记录用来改变非叶节点的索引
+            //!
+            file_leaves.seekp(new_tmp_l.address);
+            file_leaves.write(reinterpret_cast<char *>(&new_tmp_l), sizeof(node_leaves));
+            //!
+            v_up = new_tmp_l.value[0];//记录用来改变非叶节点的索引
             bool root_ = 1;//判断需不需要对根进行操作，用于下方第二个while，若根的儿子有分裂，则需要进行操作，初始设为1为了处理根的儿子是叶子节点的情况
-            node_back = new_tmp;//!
+            node_back = new_tmp;
             while (node_back.father) {//如果新添加的节点new_tmp有父亲，则对他的父亲的索引进行修改。
                 root_ = 0;
                 file.seekg(node_back.father);
@@ -110,22 +153,17 @@ namespace sjtu {
                 int l = 0, r = node_back.length - 2;
                 while (l <= r) {
                     int mid = (l + r) >> 1;
-                    if (cpy(new_tmp.value[0].first, node_back.value[mid].first)) r = mid - 1;
+                    if (cpy(new_tmp_l.value[0].first, node_back.value[mid])) r = mid - 1;
                     else l = mid + 1;
                 }
-                //for (i = 0; i < node_back.length - 1; i++) {
-                //if (cpy(new_tmp.value[0].first, node_back.value[i].first)) {
                 for (int j = node_back.length - 1; j >= l; j--) {
                     node_back.value[j + 1] = node_back.value[j];
                     node_back.son[j + 1] = node_back.son[j];
                 }
-                node_back.value[l] = v_up;
-                node_back.son[l + 1] = new_tmp.address;//!
-                //break;
-                //}
-                //}
+                node_back.value[l] = v_up.first;
+                node_back.son[l + 1] = new_tmp.address;
                 if (l + 1 == node_back.length) {
-                    node_back.value[node_back.length - 1] = v_up;
+                    node_back.value[node_back.length - 1] = v_up.first;
                     node_back.son[node_back.length] = new_tmp.address;
                 }
                 node_back.length++;
@@ -140,7 +178,7 @@ namespace sjtu {
                         new_tmp.value[i] = node_back.value[i + node_back.length];
                         new_tmp.son[i] = node_back.son[i + node_back.length];
                     }
-                    v_up = node_back.value[node_back.length - 1];
+                    v_up.first = node_back.value[node_back.length - 1];
                     new_tmp.length = M - node_back.length;
                     new_tmp.son[new_tmp.length - 1] = node_back.son[M - 1];
                     if (!delete_num) {
@@ -155,7 +193,6 @@ namespace sjtu {
                     new_tmp.father = node_back.father;//!!
                     new_tmp.is_leave = 0;
                     file.write(reinterpret_cast<char *>(&new_tmp), sizeof(node));
-                    //node tmp_;
                     for (int i = 0; i < new_tmp.length; i++) {
                         file.seekg(new_tmp.son[i]);
                         file.read(reinterpret_cast<char *>(&tmp_), sizeof(tmp_));
@@ -171,22 +208,17 @@ namespace sjtu {
                 int l = 0, r = node_back.length - 2;
                 while (l <= r) {
                     int mid = (l + r) >> 1;
-                    if (cpy(new_tmp.value[0].first, node_back.value[mid].first)) r = mid - 1;
+                    if (cpy(new_tmp_l.value[0].first, node_back.value[mid])) r = mid - 1;//!!!!!!
                     else l = mid + 1;
                 }
-                //for (i = 0; i < node_back.length - 1; i++) {
-                //if (cpy(new_tmp.value[0].first, node_back.value[i].first)) {
                 for (int j = node_back.length - 1; j >= l; j--) {
                     node_back.value[j + 1] = node_back.value[j];//第一个无用移动
                     node_back.son[j + 1] = node_back.son[j];//最后一个无效移动
                 }
-                node_back.value[l] = v_up;
-                node_back.son[l + 1] = new_tmp.address;//!
-                //break;
-                //}
-                //}
+                node_back.value[l] = v_up.first;
+                node_back.son[l + 1] = new_tmp.address;
                 if (l + 1 == node_back.length) {
-                    node_back.value[node_back.length - 1] = v_up;
+                    node_back.value[node_back.length - 1] = v_up.first;
                     node_back.son[node_back.length] = new_tmp.address;
                 }
                 node_back.length++;
@@ -200,7 +232,7 @@ namespace sjtu {
                         new_tmp.value[i] = node_back.value[i + node_back.length];
                         new_tmp.son[i] = node_back.son[i + node_back.length];
                     }
-                    v_up = node_back.value[node_back.length - 1];
+                    v_up.first = node_back.value[node_back.length - 1];
                     new_tmp.length = M - node_back.length;
                     new_tmp.son[new_tmp.length - 1] = node_back.son[M - 1];
                     if (!delete_num) {
@@ -215,7 +247,6 @@ namespace sjtu {
                     new_tmp.father = 0;
                     new_tmp.is_leave = 0;
                     file.write(reinterpret_cast<char *>(&new_tmp), sizeof(node));
-                    //node tmp_;
                     for (int i = 0; i < new_tmp.length; i++) {
                         file.seekg(new_tmp.son[i]);
                         file.read(reinterpret_cast<char *>(&tmp_), sizeof(tmp_));
@@ -245,52 +276,39 @@ namespace sjtu {
                     root.length = 2;
                     root.son[0] = node_back.address;
                     root.son[1] = new_tmp.address;
-                    root.value[0] = v_up;
+                    root.value[0] = v_up.first;
                     file.seekp(0, std::fstream::beg);
                     file.write(reinterpret_cast<char *>(&root), sizeof(node));
                 }
             }
         }
 
-        /*void insert_leave(const value_type &value, node &tmp, node &now) {
-            int i;
-            for (i = 0; i < tmp.length; i++) {//添加节点
-                if (!cpy(value.first, tmp.value[i].first) && !cpy(tmp.value[i].first, value.first)) {
-                    file.close();
-                    throw int();
-                }
-                if (cpy(value.first, tmp.value[i].first)) {
-                    for (int j = tmp.length - 1; j >= i; j--)//往后移动
-                        tmp.value[j + 1] = tmp.value[j];
-                    tmp.value[i] = value;
-                    break;
-                }
-            }
-            if (i == tmp.length)
-                tmp.value[tmp.length] = value;
-            tmp.length++;
-            file.seekp(tmp.address);
-            file.write(reinterpret_cast<char *>(&tmp), sizeof(node));
-            if (tmp.length == M) {//如果叶节点个数过多则需要分裂
-                split(tmp, now);
-            }
-        }*/
-
         void merge(node &now, value_type &v_up) {
-            //node tmp;
-            if (now.pre != -1) {//如果合并的节点左边有节点的话
-                file.seekg(now.pre);
-                file.read(reinterpret_cast<char *>(&tmp), sizeof(node));
-                if (tmp.length > (M) / 2) {//如果左边的节点可以移动一个节点过来
-                    now.length++;
-                    tmp.length--;
-                    for (int k = now.length - 1; k >= 0; k--)
-                        now.value[k + 1] = now.value[k];
-                    now.value[0] = tmp.value[tmp.length];
-                    file.seekp(tmp.address);
-                    file.write(reinterpret_cast<char *>(&tmp), sizeof(node));
-                    file.seekp(now.address);
-                    file.write(reinterpret_cast<char *>(&now), sizeof(node));
+            if (now_l.pre != -1) {//如果合并的节点左边有节点的话
+                //!
+                file_leaves.seekg(now_l.pre);
+                file_leaves.read(reinterpret_cast<char *>(&tmp_l), sizeof(node_leaves));
+                //file.seekg(tmp_l.key_address);
+                //file.read(reinterpret_cast<char *>(&tmp), sizeof(node));
+                if (tmp_l.length > (N) / 2) {//如果左边的节点可以移动一个节点过来
+                    now_l.length++;
+                    //now.length++;
+                    tmp_l.length--;
+                    //tmp.length--;
+                    for (int k = now_l.length - 1; k >= 0; k--)
+                        //now.value[k + 1] = now.value[k],
+                        now_l.value[k + 1] = now_l.value[k];
+                    //now.value[0] = tmp.value[tmp.length];
+                    now_l.value[0] = tmp_l.value[tmp_l.length];
+                    //file.seekp(tmp.address);
+                    //file.write(reinterpret_cast<char *>(&tmp), sizeof(node));
+                    //file.seekp(now.address);
+                    //file.write(reinterpret_cast<char *>(&now), sizeof(node));
+                    file_leaves.seekp(tmp_l.address);
+                    file_leaves.write(reinterpret_cast<char *>(&tmp_l), sizeof(node_leaves));
+                    file_leaves.seekp(now_l.address);
+                    file_leaves.write(reinterpret_cast<char *>(&now_l), sizeof(node_leaves));
+                    //!
                     file.seekg(now.father);
                     file.read(reinterpret_cast<char *>(&tmp), sizeof(node));
                     bool ok = 0;
@@ -300,26 +318,21 @@ namespace sjtu {
                         bool find_it = 0;
                         while (l <= r) {
                             int mid = (l + r) >> 1;
-                            if (!cpy(tmp.value[mid].first, v_up.first) &&
-                                !cpy(v_up.first, tmp.value[mid].first)) {
+                            if (!cpy(tmp.value[mid], v_up.first) &&
+                                !cpy(v_up.first, tmp.value[mid])) {
                                 find_it = 1;
                                 k = mid;
                                 break;
                             }
-                            if (cpy(v_up.first, tmp.value[mid].first)) r = mid - 1;
+                            if (cpy(v_up.first, tmp.value[mid])) r = mid - 1;
                             else l = mid + 1;
                         }
-                        //for (int k = 0; k < tmp.length - 1; k++) {
-                        //if (!cpy(tmp.value[k].first, v_up.first) &&
-                        //    !cpy(v_up.first, tmp.value[k].first)) {
                         if (find_it) {
-                            tmp.value[k] = now.value[0];
+                            tmp.value[k] = now_l.value[0].first;
                             file.seekp(tmp.address);
                             file.write(reinterpret_cast<char *>(&tmp), sizeof(node));
                             ok = 1;
-                            //break;
                         }
-                        //}
                         if (ok) break;
                         else {
                             file.seekg(tmp.father);
@@ -330,20 +343,31 @@ namespace sjtu {
                     return;
                 }
             }
-            if (now.next != -1) {//同理判断右边的节点
-                file.seekg(now.next);
-                file.read(reinterpret_cast<char *>(&tmp), sizeof(node));
-                if (tmp.length > (M) / 2) {
-                    now.length++;
-                    tmp.length--;
-                    now.value[now.length - 1] = tmp.value[0];
-                    value_type up = tmp.value[0];
-                    for (int k = 0; k <= tmp.length - 1; k++)
-                        tmp.value[k] = tmp.value[k + 1];
-                    file.seekp(tmp.address);
-                    file.write(reinterpret_cast<char *>(&tmp), sizeof(node));
-                    file.seekp(now.address);
-                    file.write(reinterpret_cast<char *>(&now), sizeof(node));
+            if (now_l.next != -1) {//同理判断右边的节点
+                file_leaves.seekg(now_l.next);
+                file_leaves.read(reinterpret_cast<char *>(&tmp_l), sizeof(node_leaves));
+                //file.seekg(tmp_l.key_address);
+                //file.read(reinterpret_cast<char *>(&tmp), sizeof(node));
+                if (tmp_l.length > (N) / 2) {
+                    //now.length++;
+                    now_l.length++;
+                    //tmp.length--;
+                    tmp_l.length--;
+                    //now.value[now.length - 1] = tmp.value[0];
+                    now_l.value[now_l.length - 1] = tmp_l.value[0];
+                    value_type up = tmp_l.value[0];
+                    for (int k = 0; k <= tmp_l.length - 1; k++)
+                        //tmp.value[k] = tmp.value[k + 1],
+                        tmp_l.value[k] = tmp_l.value[k + 1];
+                    //file.seekp(tmp.address);
+                    //file.write(reinterpret_cast<char *>(&tmp), sizeof(node));
+                    //file.seekp(now.address);
+                    //file.write(reinterpret_cast<char *>(&now), sizeof(node));
+                    file_leaves.seekp(tmp_l.address);
+                    file_leaves.write(reinterpret_cast<char *>(&tmp_l), sizeof(node_leaves));
+                    file_leaves.seekp(now_l.address);
+                    file_leaves.write(reinterpret_cast<char *>(&now_l), sizeof(node_leaves));
+                    //!
                     file.seekg(now.father);
                     file.read(reinterpret_cast<char *>(&now), sizeof(node));
                     bool ok = 0;
@@ -353,26 +377,21 @@ namespace sjtu {
                         bool find_it = 0;
                         while (l <= r) {
                             int mid = (l + r) >> 1;
-                            if (!cpy(now.value[mid].first, up.first) &&
-                                !cpy(up.first, now.value[mid].first)) {
+                            if (!cpy(now.value[mid], up.first) &&
+                                !cpy(up.first, now.value[mid])) {
                                 find_it = 1;
                                 k = mid;
                                 break;
                             }
-                            if (cpy(up.first, now.value[mid].first)) r = mid - 1;
+                            if (cpy(up.first, now.value[mid])) r = mid - 1;
                             else l = mid + 1;
                         }
-                        //for (int k = 0; k < now.length - 1; k++) {
-                        //if (!cpy(now.value[k].first, up.first) &&
-                        //    !cpy(up.first, now.value[k].first)) {
                         if (find_it) {
-                            now.value[k] = tmp.value[0];
+                            now.value[k] = tmp_l.value[0].first;
                             file.seekp(now.address);
                             file.write(reinterpret_cast<char *>(&now), sizeof(node));
                             ok = 1;
-                            //break;
                         }
-                        //}
                         if (ok) break;
                         else {
                             file.seekg(now.father);
@@ -383,27 +402,38 @@ namespace sjtu {
                     return;
                 }
             }
-            if (now.pre != -1 || now.next != -1) {//以下判断的是需要合并的情况
-                if (now.pre != -1) {//如果左边有节点，由上述判断知道肯定只能合并
-                    file.seekg(now.pre);
+            if (now_l.pre != -1 || now_l.next != -1) {//以下判断的是需要合并的情况
+                if (now_l.pre != -1) {//如果左边有节点，由上述判断知道肯定只能合并
+                    //!
+                    file_leaves.seekg(now_l.pre);
+                    file_leaves.read(reinterpret_cast<char *>(&tmp_l), sizeof(node_leaves));
+                    file.seekg(tmp_l.key_address);
                     file.read(reinterpret_cast<char *>(&tmp), sizeof(node));
                     if (now.father == tmp.father) {//如果两个节点父亲是同一个节点，否则就考虑右边的节点，此时右边的节点肯定是同一个父亲
                         delete_num++;
-                        delete_.push_back(now.address);//!删除
-                        for (int k = 0; k < now.length; k++) {
-                            tmp.value[k + tmp.length] = now.value[k];
+                        delete_.push_back(now.address);
+                        //!
+                        delete_leaves_num++;
+                        delete_leaves.push_back(now_l.address);
+                        //!
+                        for (int k = 0; k < now_l.length; k++) {
+                            //tmp.value[k + tmp.length] = now.value[k];
+                            tmp_l.value[k + tmp_l.length] = now_l.value[k];
                         }
-                        tmp.length += now.length;
-                        tmp.next = now.next;
-                        file.seekp(tmp.address);
-                        file.write(reinterpret_cast<char *>(&tmp), sizeof(node));
-                        if (tmp.next != -1) {
-                            file.seekg(tmp.next);
-                            //node tmp_;
-                            file.read(reinterpret_cast<char *>(&tmp_), sizeof(node));
-                            tmp_.pre = tmp.address;
-                            file.seekp(tmp_.address);
-                            file.write(reinterpret_cast<char *>(&tmp_), sizeof(node));
+                        //tmp.length += now.length;
+                        tmp_l.length += now_l.length;
+                        tmp_l.next = now_l.next;
+                        //!
+                        //file.seekp(tmp.address);
+                        //file.write(reinterpret_cast<char *>(&tmp), sizeof(node));
+                        file_leaves.seekp(tmp_l.address);
+                        file_leaves.write(reinterpret_cast<char *>(&tmp_l), sizeof(node_leaves));
+                        if (tmp_l.next != -1) {
+                            file_leaves.seekg(tmp_l.next);
+                            file_leaves.read(reinterpret_cast<char *>(&tmp_l_), sizeof(node_leaves));
+                            tmp_l_.pre = tmp_l.address;
+                            file_leaves.seekp(tmp_l_.address);
+                            file_leaves.write(reinterpret_cast<char *>(&tmp_l_), sizeof(node_leaves));
                         }
                         file.seekg(now.father);
                         file.read(reinterpret_cast<char *>(&now), sizeof(node));
@@ -412,30 +442,24 @@ namespace sjtu {
                         bool find_it = 0;
                         while (l <= r) {
                             int mid = (l + r) >> 1;
-                            if (!cpy(now.value[mid].first, v_up.first) &&
-                                !cpy(v_up.first, now.value[mid].first)) {
+                            if (!cpy(now.value[mid], v_up.first) &&
+                                !cpy(v_up.first, now.value[mid])) {
                                 find_it = 1;
                                 k = mid;
                                 break;
                             }
-                            if (cpy(v_up.first, now.value[mid].first)) r = mid - 1;
+                            if (cpy(v_up.first, now.value[mid])) r = mid - 1;
                             else l = mid + 1;
                         }
-                        //for (int k = 0; k < now.length - 1; k++) {
-                        //if (!cpy(v_up.first, now.value[k].first) &&
-                        //    !cpy(now.value[k].first, v_up.first)) {
                         if (find_it) {
                             for (int u = k; u < now.length - 2; u++) {
                                 now.value[u] = now.value[u + 1];
                                 now.son[u + 1] = now.son[u + 2];
                             }
-                            //break;
                         }
-                        //}
                         now.length--;
                         file.seekp(now.address);
                         file.write(reinterpret_cast<char *>(&now), sizeof(node));
-                        //bool root_ = 0;
                         while (now.father != -1) {//寻找祖先进行合并
                             if (now.length <= (M - 2) / 2) {//如果这个点需要合并，则执行和上面一样的操作，否则直接break
                                 file.seekg(now.father);
@@ -443,13 +467,9 @@ namespace sjtu {
                                 l = 0, r = tmp.length - 2;
                                 while (l <= r) {
                                     int mid = (l + r) >> 1;
-                                    if (cpy(now.value[0].first, tmp.value[mid].first)) r = mid - 1;
+                                    if (cpy(now.value[0], tmp.value[mid])) r = mid - 1;
                                     else l = mid + 1;
                                 }
-                                /*for (k = 0; k < tmp.length - 1; k++) {
-                                    if (cpy(now.value[0].first, tmp.value[k].first))
-                                        break;
-                                }*/
                                 if (l != tmp.length - 1) {//如果不是最后一个
                                     file.seekg(tmp.son[l + 1]);
                                     //node tmp_;
@@ -592,26 +612,35 @@ namespace sjtu {
                         return;
                     }
                 }//以下均为对于右边节点的处理，和上方几乎一样
-                file.seekg(now.next);
+                //!
+                file_leaves.seekg(now_l.next);
+                file_leaves.read(reinterpret_cast<char *>(&tmp_l), sizeof(node_leaves));
+                file.seekg(tmp_l.key_address);
                 file.read(reinterpret_cast<char *>(&tmp), sizeof(node));
                 delete_num++;
-                delete_.push_back(tmp.address);//!删除
-                for (int k = 0; k < tmp.length; k++) {
-                    now.value[k + now.length] = tmp.value[k];
+                delete_.push_back(tmp.address);
+                delete_leaves_num++;
+                delete_leaves.push_back(tmp_l.address);
+                for (int k = 0; k < tmp_l.length; k++) {
+                    //now.value[k + now.length] = tmp.value[k];
+                    now_l.value[k + now_l.length] = tmp_l.value[k];
                 }
-                now.length += tmp.length;
-                now.next = tmp.next;
-                v_up = tmp.value[0];
-                file.seekp(now.address);
-                file.write(reinterpret_cast<char *>(&now), sizeof(node));
-                if (now.next != -1) {
-                    file.seekg(now.next);
-                    //node tmp_;
-                    file.read(reinterpret_cast<char *>(&tmp_), sizeof(node));
-                    tmp_.pre = now.address;
-                    file.seekp(tmp_.address);
-                    file.write(reinterpret_cast<char *>(&tmp_), sizeof(node));
+                //now.length += tmp.length;
+                now_l.length += tmp_l.length;
+                now_l.next = tmp_l.next;
+                v_up = tmp_l.value[0];
+                //file.seekp(now.address);
+                //file.write(reinterpret_cast<char *>(&now), sizeof(node));
+                file_leaves.seekp(now_l.address);
+                file_leaves.write(reinterpret_cast<char *>(&now_l), sizeof(node_leaves));
+                if (now_l.next != -1) {
+                    file_leaves.seekg(now_l.next);
+                    file_leaves.read(reinterpret_cast<char *>(&tmp_l_), sizeof(node_leaves));
+                    tmp_l_.pre = now_l.address;
+                    file_leaves.seekp(tmp_l_.address);
+                    file_leaves.write(reinterpret_cast<char *>(&tmp_l_), sizeof(node_leaves));
                 }
+                //!
                 file.seekg(now.father);
                 file.read(reinterpret_cast<char *>(&now), sizeof(node));
                 int l = 0, r = now.length - 2;
@@ -619,26 +648,21 @@ namespace sjtu {
                 bool find_it = 0;
                 while (l <= r) {
                     int mid = (l + r) >> 1;
-                    if (!cpy(now.value[mid].first, v_up.first) &&
-                        !cpy(v_up.first, now.value[mid].first)) {
+                    if (!cpy(now.value[mid], v_up.first) &&
+                        !cpy(v_up.first, now.value[mid])) {
                         find_it = 1;
                         k = mid;
                         break;
                     }
-                    if (cpy(v_up.first, now.value[mid].first)) r = mid - 1;
+                    if (cpy(v_up.first, now.value[mid])) r = mid - 1;
                     else l = mid + 1;
                 }
-                //for (int k = 0; k < now.length - 1; k++) {
-                //if (!cpy(v_up.first, now.value[k].first) &&
-                //    !cpy(now.value[k].first, v_up.first)) {
                 if (find_it) {
                     for (int u = k; u < now.length - 2; u++) {
                         now.value[u] = now.value[u + 1];
                         now.son[u + 1] = now.son[u + 2];
                     }
-                    //break;
                 }
-                //}
                 now.length--;
                 file.seekp(now.address);
                 file.write(reinterpret_cast<char *>(&now), sizeof(node));
@@ -649,23 +673,17 @@ namespace sjtu {
                         l = 0, r = tmp.length - 2;
                         while (l <= r) {
                             int mid = (l + r) >> 1;
-                            if (cpy(now.value[0].first, tmp.value[mid].first)) r = mid - 1;
+                            if (cpy(now.value[0], tmp.value[mid])) r = mid - 1;
                             else l = mid + 1;
                         }
-                        /*for (k = 0; k < tmp.length - 1; k++) {
-                            if (cpy(now.value[0].first, tmp.value[k].first))
-                                break;
-                        }*/
                         if (l != tmp.length - 1) {
                             file.seekg(tmp.son[l + 1]);
-                            //node tmp_;
                             file.read(reinterpret_cast<char *>(&tmp_), sizeof(tmp_));
                             if (tmp_.length > (M) / 2) {
                                 now.length++;
                                 now.value[now.length - 2] = tmp.value[l];
                                 now.son[now.length - 1] = tmp_.son[0];
                                 file.seekg(now.son[now.length - 1]);
-                                //node tmp_0;
                                 file.read(reinterpret_cast<char *>(&tmp_0), sizeof(tmp_0));
                                 tmp_0.father = now.address;
                                 file.seekp(now.son[now.length - 1]);
@@ -686,7 +704,7 @@ namespace sjtu {
                                 break;
                             } else {
                                 delete_num++;
-                                delete_.push_back(tmp_.address);//!删除
+                                delete_.push_back(tmp_.address);
                                 now.value[now.length - 1] = tmp.value[l];
                                 for (int u = 0; u < tmp_.length - 1; u++) {
                                     now.value[u + now.length] = tmp_.value[u];
@@ -698,7 +716,6 @@ namespace sjtu {
                                 file.write(reinterpret_cast<char *>(&now), sizeof(node));
                                 for (int u = 0; u <= tmp_.length - 1; u++) {
                                     file.seekg(now.son[u + now.length - tmp_.length]);
-                                    //node tmp_0;
                                     file.read(reinterpret_cast<char *>(&tmp_0), sizeof(node));
                                     tmp_0.father = now.address;
                                     file.seekp(now.son[u + now.length - tmp_.length]);
@@ -714,7 +731,6 @@ namespace sjtu {
                             }
                         } else {
                             file.seekg(tmp.son[l - 1]);
-                            //node tmp_;
                             file.read(reinterpret_cast<char *>(&tmp_), sizeof(tmp_));
                             if (tmp_.length > (M) / 2) {
                                 now.son[now.length] = now.son[now.length - 1];
@@ -726,7 +742,6 @@ namespace sjtu {
                                 now.value[0] = tmp.value[tmp.length - 2];
                                 now.son[0] = tmp_.son[tmp_.length - 1];
                                 file.seekg(now.son[0]);
-                                //node tmp_0;
                                 file.read(reinterpret_cast<char *>(&tmp_0), sizeof(tmp_0));
                                 tmp_0.father = now.address;
                                 file.seekp(now.son[0]);
@@ -742,7 +757,7 @@ namespace sjtu {
                                 break;
                             } else {
                                 delete_num++;
-                                delete_.push_back(now.address);//!删除
+                                delete_.push_back(now.address);
                                 tmp_.value[tmp_.length - 1] = tmp.value[tmp.length - 2];
                                 for (int u = 0; u < now.length - 1; u++) {
                                     tmp_.value[u + tmp_.length] = now.value[u];
@@ -754,7 +769,6 @@ namespace sjtu {
                                 file.write(reinterpret_cast<char *>(&tmp_), sizeof(node));
                                 for (int u = 0; u <= now.length - 1; u++) {
                                     file.seekg(tmp_.son[u + tmp_.length - now.length]);
-                                    //node tmp_0;
                                     file.read(reinterpret_cast<char *>(&tmp_0), sizeof(node));
                                     tmp_0.father = tmp_.address;
                                     file.seekp(tmp_.son[u + tmp_.length - now.length]);
@@ -779,13 +793,12 @@ namespace sjtu {
                             return;
                         }
                         delete_num++;
-                        delete_.push_back(now.address);//!删除
+                        delete_.push_back(now.address);
                         now.address = 0;
                         now.father = -1;
                         file.seekp(0);
                         file.write(reinterpret_cast<char *>(&now), sizeof(node));
                         for (int i = 0; i < now.length; i++) {
-                            //node tmp_0;
                             file.seekg(now.son[i]);
                             file.read(reinterpret_cast<char *>(&tmp_0), sizeof(node));
                             tmp_0.father = 0;
@@ -797,9 +810,13 @@ namespace sjtu {
                 file.close();
                 return;
             }
-            if (!now.length) {//如果当前节点没有长度，那么肯定是根节点下方只有一个儿子（叶节点）的情况(左右都没有节点，因此不会进入上述情况），此时把根节点长度设置为0
+            if (!now_l.length) {//如果当前节点没有长度，那么肯定是根节点下方只有一个儿子（叶节点）的情况(左右都没有节点，因此不会进入上述情况），此时把根节点长度设置为0
                 delete_num++;
-                delete_.push_back(now.address);//!删除
+                delete_.push_back(now.address);
+                //!
+                delete_leaves_num++;
+                delete_leaves.push_back(now_l.address);
+                //!
                 root.length--;
                 file.seekp(0);
                 file.write(reinterpret_cast<char *>(&root), sizeof(node));
@@ -807,48 +824,79 @@ namespace sjtu {
         }
 
     public:
-        explicit bpt(std::string file_name_, std::string file_delete_name_) {
+        explicit bpt(std::string file_name_, std::string file_leaves_name_/*, std::string file_delete_name_,
+                     std::string file_delete_leaves_*/) {
             file_name = file_name_;
-            file_delete_name = file_delete_name_;
+            file_leaves_name = file_leaves_name_;
+            //file_delete_name = file_delete_name_;
+            //file_delete_leaves_name = file_delete_leaves_;
             file.open(file_name);
-            file_delete.open(file_delete_name);
+            file_leaves.open(file_leaves_name);
+            //file_delete.open(file_delete_name);
+            //file_delete_leaves.open(file_delete_leaves_name);
             if (!file) {
                 file.open(file_name, std::fstream::out);
-                file_delete.open(file_delete_name, std::fstream::out);
-                //node tmp;
+                //file_delete.open(file_delete_name, std::fstream::out);
+                file_leaves.open(file_leaves_name, std::fstream::out);
+                //file_delete_leaves.open(file_delete_leaves_name, std::fstream::out);
                 file.write(reinterpret_cast<char *>(&tmp), sizeof(node));
                 file.close();
-                int x = 0;
-                file_delete.write(reinterpret_cast<char *>(&x), sizeof(int));
-                file_delete.close();
+                //int x = 0;
+                //file_delete_leaves.write(reinterpret_cast<char *>(&x), sizeof(int));
+                //file_delete.write(reinterpret_cast<char *>(&x), sizeof(int));
+                long long x_ = 0;
+                file_leaves.write(reinterpret_cast<char *>(&x_), sizeof(long long));
+                //file_delete.close();
+                file_leaves.close();
+                //file_delete_leaves.close();
                 return;
             }
+            /*file_delete.seekg(0);
             file_delete.read(reinterpret_cast<char *>(&delete_num), sizeof(int));
             for (int i = 1; i <= delete_num; i++) {
                 long long x;
                 file_delete.read(reinterpret_cast<char *>(&x), sizeof(long long));
                 delete_.push_back(x);
             }
-            file_delete.close();
+            file_delete_leaves.seekg(0);
+            file_delete_leaves.read(reinterpret_cast<char *>(&delete_leaves_num), sizeof(int));
+            for (int i = 1; i <= delete_leaves_num; i++) {
+                long long x;
+                file_delete_leaves.read(reinterpret_cast<char *>(&x), sizeof(long long));
+                delete_leaves.push_back(x);
+            }
+            file_delete.close();*/
             file.read(reinterpret_cast<char *>(&root), sizeof(node));
             file.close();
+            file_leaves.close();
+            //file_delete_leaves.close();
         }
 
         ~bpt() {
-            file_delete.open(file_delete_name);
+            /*file_delete.open(file_delete_name);
+            file_delete.seekp(0);
             file_delete.write(reinterpret_cast<char *>(&delete_num), sizeof(int));
             for (int i = 0; i < delete_.size(); i++) {
                 file_delete.write(reinterpret_cast<char *>(&delete_[i]), sizeof(long long));
             }
             file_delete.close();
+            //!
+            file_delete_leaves.open(file_delete_leaves_name);
+            file_delete_leaves.seekp(0);
+            file_delete_leaves.write(reinterpret_cast<char *>(&delete_leaves_num), sizeof(int));
+            for (int i = 0; i < delete_leaves.size(); i++) {
+                file_delete_leaves.write(reinterpret_cast<char *>(&delete_leaves[i]), sizeof(long long));
+            }
+            file_delete_leaves.close();*/
+            //!
         }
 
         void insert(const value_type &value) {
             file.open(file_name);
             file.read(reinterpret_cast<char *>(&root), sizeof(node));
+            file_leaves.open(file_leaves_name);
             if (!root.length) {//无根的时候添加一个根
-                //node tmp;
-                tmp = ept;//!
+                tmp = ept;
                 if (!delete_num) {
                     file.seekg(0, std::ios::end);
                 } else {
@@ -862,8 +910,27 @@ namespace sjtu {
                 tmp.father = 0;
                 tmp.is_leave = 1;
                 root.length++;
-                tmp.length++;
-                tmp.value[0] = value;
+                //tmp.length++;
+                //!
+                //tmp.value[0] = value.first;
+                if (!delete_leaves_num) {
+                    file_leaves.seekg(0, std::ios::end);
+                } else {
+                    long long x = delete_leaves.back();
+                    delete_leaves.pop_back();
+                    delete_leaves_num--;
+                    file_leaves.seekg(x);
+                }
+                tmp.leave_address = file_leaves.tellg();
+                tmp_l.value[0] = value;
+                tmp_l.length = 1;
+                tmp_l.address = tmp.leave_address;
+                tmp_l.key_address = tmp.address;
+                file_leaves.seekp(0);
+                file_leaves.write(reinterpret_cast<char *>(&tmp.leave_address), sizeof(long long));
+                file_leaves.write(reinterpret_cast<char *>(&tmp_l), sizeof(node_leaves));
+                file_leaves.close();
+                //!
                 file.seekp(tmp.address);
                 file.write(reinterpret_cast<char *>(&tmp), sizeof(node));
                 file.seekp(0);
@@ -871,50 +938,49 @@ namespace sjtu {
                 file.close();
                 return;
             }
-            now = root;//!
+            now = root;
             while (1) {
                 int l = 0, r = now.length - 2;
                 while (l <= r) {
                     int mid = (l + r) >> 1;
-                    if (cpy(value.first, now.value[mid].first)) r = mid - 1;
+                    if (cpy(value.first, now.value[mid])) r = mid - 1;
                     else l = mid + 1;
                 }
-                /*int i;
-                for (i = 0; i < now.length - 1; i++) //比较来寻找下一层
-                    if (cpy(value.first, now.value[i].first))
-                        break;*/
                 file.seekg(now.son[l]);
-                file.read(reinterpret_cast<char *>(&tmp), sizeof(node));//!
+                file.read(reinterpret_cast<char *>(&tmp), sizeof(node));
                 if (tmp.is_leave) {//判断是不是叶节点
-                    //insert_leave(value, tmp, now);//now为tmp的父亲
-                    l = 0, r = tmp.length - 1;
+                    file_leaves.seekg(tmp.leave_address);
+                    file_leaves.read(reinterpret_cast<char *>(&tmp_l), sizeof(node_leaves));
+                    l = 0, r = tmp_l.length - 1;
                     while (l <= r) {
                         int mid = (l + r) >> 1;
-                        if (!cpy(value.first, tmp.value[mid].first) && !cpy(tmp.value[mid].first, value.first)) {
+                        if (!cpy(value.first, tmp_l.value[mid].first) && !cpy(tmp_l.value[mid].first, value.first)) {
                             file.close();
+                            file_leaves.close();//!
                             throw int();
                         }
-                        if (cpy(value.first, tmp.value[mid].first)) r = mid - 1;
+                        if (cpy(value.first, tmp_l.value[mid].first)) r = mid - 1;
                         else l = mid + 1;
                     }
-                    /*for (i = 0; i < tmp.length; i++) {//添加节点
-                        if (!cpy(value.first, tmp.value[i].first) && !cpy(tmp.value[i].first, value.first)) {
-                            file.close();
-                            throw int();
-                        }*/
-                    //if (cpy(value.first, tmp.value[i].first)) {
-                    for (int j = tmp.length - 1; j >= l; j--)//往后移动
+                    /*for (int j = tmp.length - 1; j >= l; j--)//往后移动
                         tmp.value[j + 1] = tmp.value[j];
-                    tmp.value[l] = value;
-                    //break;
-                    //}
-                    //}
+                    tmp.value[l] = value.first;
                     if (l == tmp.length)
-                        tmp.value[tmp.length] = value;
-                    tmp.length++;
-                    file.seekp(tmp.address);
-                    file.write(reinterpret_cast<char *>(&tmp), sizeof(node));
-                    if (tmp.length == M) {//如果叶节点个数过多则需要分裂
+                        tmp.value[tmp.length] = value.first;*/
+                    //!
+                    for (int j = tmp_l.length - 1; j >= l; j--)//往后移动
+                        tmp_l.value[j + 1] = tmp_l.value[j];
+                    tmp_l.value[l] = value;
+                    if (l == tmp_l.length)
+                        tmp_l.value[tmp_l.length] = value;
+                    //tmp.length++;
+                    tmp_l.length++;
+                    file_leaves.seekp(tmp.leave_address);
+                    file_leaves.write(reinterpret_cast<char *>(&tmp_l), sizeof(node_leaves));
+                    //!
+                    //file.seekp(tmp.address);
+                    //file.write(reinterpret_cast<char *>(&tmp), sizeof(node));
+                    if (tmp_l.length == N) {//如果叶节点个数过多则需要分裂
                         split(tmp, now);
                     }
                     break;
@@ -922,47 +988,52 @@ namespace sjtu {
                     now = tmp;//直到找到叶节点
             }
             file.close();
+            file_leaves.close();
         }
 
-        inline void insert(const Key &key,const T &value){
-            insert(value_type(key,value));
+        inline void insert(const Key &key, const T &value) {
+            insert(value_type(key, value));
         }
 
         sjtu::pair<bool, T> find2(const Key &key) {//按照key进行寻找
             if (hs.count(key)) {
-                return sjtu::pair<bool ,T>(1,hs.find(key)->second);
+                return sjtu::pair<bool, T>(1, hs.find(key)->second);
             }
             file.open(file_name);
             file.read(reinterpret_cast<char *>(&root), sizeof(node));
             if (!root.length) throw int();
-            now = root;//!
+            now = root;
             while (!now.is_leave) {
-                /*int i;
-                for (i = 0; i < now.length - 1; i++)
-                    if (cpy(key, now.value[i].first))
-                        break;*/
                 int l = 0, r = now.length - 2;
                 while (l <= r) {
                     int mid = (l + r) >> 1;
-                    if (cpy(key, now.value[mid].first)) r = mid - 1;
+                    if (cpy(key, now.value[mid])) r = mid - 1;
                     else l = mid + 1;
                 }
                 file.seekg(now.son[l]);
                 file.read(reinterpret_cast<char *>(&now), sizeof(node));
             }
-            for (int i = 0; i < now.length; i++)
-                if (!cpy(key, now.value[i].first) && !cpy(now.value[i].first, key)) {
-                    while (hs.Size() >= 3ll*1024*1024) {
+            file_leaves.open(file_leaves_name);
+            file_leaves.seekg(now.leave_address);
+            file_leaves.read(reinterpret_cast<char *>(&now_l), sizeof(node_leaves));
+            for (int i = 0; i < now_l.length; i++)
+                if (!cpy(key, now_l.value[i].first) && !cpy(now_l.value[i].first, key)) {
+                    if (hs.size() == m) {
                         hs.erase(hs.begin());
                     }
-                    hs.insert(now.value[i]);
+                    //!
+
+                    file_leaves.close();
+                    //!
+                    hs.insert(now_l.value[i]);
                     file.close();
-                    return sjtu::pair<bool,T>(1,now.value[i].second);
+                    return sjtu::pair<bool, T>(1, now_l.value[i].second);
                 }
+            file_leaves.close();
             file.close();
             return sjtu::pair<bool, T>(0, T());
         }
-        
+
         T find(const Key &key) {//按照key进行寻找
             if (hs.count(key)) {
                 return hs.find(key)->second;
@@ -970,30 +1041,33 @@ namespace sjtu {
             file.open(file_name);
             file.read(reinterpret_cast<char *>(&root), sizeof(node));
             if (!root.length) throw int();
-            now = root;//!
+            now = root;
             while (!now.is_leave) {
-                /*int i;
-                for (i = 0; i < now.length - 1; i++)
-                    if (cpy(key, now.value[i].first))
-                        break;*/
                 int l = 0, r = now.length - 2;
                 while (l <= r) {
                     int mid = (l + r) >> 1;
-                    if (cpy(key, now.value[mid].first)) r = mid - 1;
+                    if (cpy(key, now.value[mid])) r = mid - 1;
                     else l = mid + 1;
                 }
                 file.seekg(now.son[l]);
                 file.read(reinterpret_cast<char *>(&now), sizeof(node));
             }
-            for (int i = 0; i < now.length; i++)
-                if (!cpy(key, now.value[i].first) && !cpy(now.value[i].first, key)) {
-                    while (hs.Size() >= 3ll*1024*1024) {
+            file_leaves.open(file_leaves_name);
+            file_leaves.seekg(now.leave_address);
+            file_leaves.read(reinterpret_cast<char *>(&now_l), sizeof(node_leaves));
+            for (int i = 0; i < now_l.length; i++)
+                if (!cpy(key, now_l.value[i].first) && !cpy(now_l.value[i].first, key)) {
+                    if (hs.size() == m) {
                         hs.erase(hs.begin());
                     }
-                    hs.insert(now.value[i]);
+                    //!
+                    file_leaves.close();
+                    //!
+                    hs.insert(now_l.value[i]);
                     file.close();
-                    return now.value[i].second;
+                    return now_l.value[i].second;
                 }
+            file_leaves.close();
             file.close();
             throw int();
         }
@@ -1005,134 +1079,134 @@ namespace sjtu {
                 file.close();
                 throw int();
             }
-            now = root;//!
+            now = root;
             while (!now.is_leave) {//先寻找到叶节点的位置
-                /*int i;
-                for (i = 0; i < now.length - 1; i++)
-                    if (cpy(key, now.value[i].first))
-                        break;*/
                 int l = 0, r = now.length - 2;
                 while (l <= r) {
                     int mid = (l + r) >> 1;
-                    if (cpy(key, now.value[mid].first)) r = mid - 1;
+                    if (cpy(key, now.value[mid])) r = mid - 1;
                     else l = mid + 1;
                 }
                 file.seekg(now.son[l]);
                 file.read(reinterpret_cast<char *>(&now), sizeof(node));
             }
-            int l = 0, r = now.length - 1;
+            file_leaves.open(file_leaves_name);
+            file_leaves.seekg(now.leave_address);
+            file_leaves.read(reinterpret_cast<char *>(&now_l), sizeof(node_leaves));
+            int l = 0, r = now_l.length - 1;
             int i;
             bool find_it = 0;
             while (l <= r) {
                 int mid = (l + r) >> 1;
-                if (!cpy(key, now.value[mid].first) && !cpy(now.value[mid].first, key)) {
+                if (!cpy(key, now_l.value[mid].first) && !cpy(now_l.value[mid].first, key)) {
                     find_it = 1;
                     i = mid;
                     break;
                 }
-                if (cpy(key, now.value[mid].first)) r = mid - 1;
+                if (cpy(key, now_l.value[mid].first)) r = mid - 1;
                 else l = mid + 1;
             }
-            //for (int i = 0; i < now.length; i++)
-            //if (!cpy(key, now.value[i].first) && !cpy(now.value[i].first, key)) {
             if (find_it) {
-                if (hs.count(now.value[i].first)) {
-                    hs.erase(hs.find(now.value[i].first));
+                if (hs.count(now_l.value[i].first)) {
+                    hs.erase(hs.find(now_l.value[i].first));
                 }
-                value_type v_up = now.value[0];
-                for (int j = i; j < now.length - 1; j++)
-                    now.value[j] = now.value[j + 1];
-                now.length--;
-                file.seekp(now.address);
-                file.write(reinterpret_cast<char *>(&now), sizeof(node));
+                //!
+                value_type v_up = now_l.value[0];
+                for (int j = i; j < now_l.length - 1; j++)
+                    //now.value[j] = now.value[j + 1],
+                    now_l.value[j] = now_l.value[j + 1];
+                //now.length--;
+                now_l.length--;
+                //file.seekp(now.address);
+                //file.write(reinterpret_cast<char *>(&now), sizeof(node));
+                //!
+                file_leaves.seekp(now.leave_address);
+                file_leaves.write(reinterpret_cast<char *>(&now_l), sizeof(node_leaves));
+                //!
                 if (!i) {//如果删的是第一个数字，需要将父亲（可能比父亲还高级）的索引更改
-                    tmp = now;//!
-                    //bool ok = 0;//是否找到需要更改的索引
+                    tmp = now;
                     while (tmp.father != -1) {
                         file.seekg(tmp.father);
                         file.read(reinterpret_cast<char *>(&tmp), sizeof(node));
-                        l = 0, r = now.length - 1;
+                        l = 0, r = tmp.length - 2;
                         int j;
                         find_it = 0;
                         while (l <= r) {
                             int mid = (l + r) >> 1;
-                            if (!cpy(v_up.first, now.value[mid].first) && !cpy(now.value[mid].first, v_up.first)) {
+                            if (!cpy(v_up.first, tmp.value[mid]) && !cpy(tmp.value[mid], v_up.first)) {
                                 find_it = 1;
                                 j = mid;
                                 break;
                             }
-                            if (cpy(v_up.first, now.value[mid].first)) r = mid - 1;
+                            if (cpy(v_up.first, tmp.value[mid])) r = mid - 1;
                             else l = mid + 1;
                         }
-                        //for (int j = 0; j < tmp.length - 1; j++) {
-                        //if (!cpy(v_up.first, tmp.value[j].first) && !cpy(tmp.value[j].first, v_up.first)) {
                         if (find_it) {
-                            tmp.value[j] = now.value[0];
-                            v_up = now.value[0];//!
+                            tmp.value[j] = now_l.value[0].first;
+                            v_up = now_l.value[0];//!
                             file.seekp(tmp.address);
                             file.write(reinterpret_cast<char *>(&tmp), sizeof(node));
-                            //ok = 1;
                             break;
                         }
-
-                        //if (ok) break;
                     }
                 }
-                if (now.length <= (M - 2) / 2) {
+                if (now_l.length <= (N - 2) / 2) {
                     merge(now, v_up);
                 }
                 file.close();
+                file_leaves.close();//!
                 return;
             }
-
+            file_leaves.close();
             file.close();
-
             throw int();
         }
 
         void modify(const Key &key, const T &v) {
             file.open(file_name);
             file.read(reinterpret_cast<char *>(&root), sizeof(node));
-            now = root;//!
+            now = root;
             while (!now.is_leave) {
                 int l = 0, r = now.length - 2;
                 while (l <= r) {
                     int mid = (l + r) >> 1;
-                    if (cpy(key, now.value[mid].first)) r = mid - 1;
+                    if (cpy(key, now.value[mid])) r = mid - 1;
                     else l = mid + 1;
                 }
-                /*for (i = 0; i < now.length - 1; i++)
-                    if (cpy(key, now.value[i].first))
-                        break;*/
                 file.seekg(now.son[l]);
                 file.read(reinterpret_cast<char *>(&now), sizeof(node));
             }
-            int l = 0, r = now.length - 1;
+            file_leaves.open(file_leaves_name);
+            file_leaves.seekg(now.leave_address);
+            file_leaves.read(reinterpret_cast<char *>(&now_l), sizeof(node_leaves));
+            int l = 0, r = now_l.length - 1;
             int i;
             bool find_it = 0;
             while (l <= r) {
                 int mid = (l + r) >> 1;
-                if (!cpy(key, now.value[mid].first) && !cpy(now.value[mid].first, key)) {
+                if (!cpy(key, now_l.value[mid].first) && !cpy(now_l.value[mid].first, key)) {
                     find_it = 1;
                     i = mid;
                     break;
                 }
-                if (cpy(key, now.value[mid].first)) r = mid - 1;
+                if (cpy(key, now_l.value[mid].first)) r = mid - 1;
                 else l = mid + 1;
             }
-            //for (int i = 0; i < now.length; i++)
-            //if (!cpy(key, now.value[i].first) && !cpy(now.value[i].first, key)) {
             if (find_it) {
-                if (hs.count(now.value[i].first)) {
-                    hs.erase(hs.find(now.value[i].first));
+                if (hs.count(now_l.value[i].first)) {
+                    hs.erase(hs.find(now_l.value[i].first));
                 }
-                now.value[i].second = v;
-                hs.insert(now.value[i]);
-                file.seekp(now.address);
-                file.write(reinterpret_cast<char *>(&now), sizeof(node));
+                //!
+                //!
+                now_l.value[i].second = v;
+                hs.insert(now_l.value[i]);
+                file_leaves.seekp(now.leave_address);
+                file_leaves.write(reinterpret_cast<char *>(&now_l), sizeof(node_leaves));
+                file_leaves.close();
                 file.close();
                 return;
             }
+            file_leaves.close();
             file.close();
             throw int();
         }
@@ -1161,151 +1235,131 @@ namespace sjtu {
             root.length = 0;
             file.write(reinterpret_cast<char *>(&root), sizeof(node));
             file.close();
+            //!
+            file_leaves.open(file_leaves_name);
+            long long x = 0;
+            file_leaves.seekp(0);
+            file_leaves.write(reinterpret_cast<char *>(&x), sizeof(long long));
+            file_leaves.close();
+            //!
         }
-
-        /*Key lower_bound(const Key &key) {
-            file.open(file_name);
-            file.read(reinterpret_cast<char *>(&root), sizeof(node));
-            now = root;//!
-            while (!now.is_leave) {
-                int i;
-                for (i = 0; i < now.length - 1; i++)
-                    if (cpy(key, now.value[i].first))
-                        break;
-                file.seekg(now.son[i]);
-                file.read(reinterpret_cast<char *>(&now), sizeof(node));
-            }
-            for (int i = 0; i < now.length; i++)
-                if (!cpy(now.value[i].first, key)) {
-                    file.close();
-                    return now.value[i].first;
-                }
-            file.close();
-            return key;
-        }
-
-        Key upper_bound(const Key &key) {
-            file.open(file_name);
-            file.read(reinterpret_cast<char *>(&root), sizeof(node));
-            now = root;//!
-            while (!now.is_leave) {
-                int i;
-                for (i = 0; i < now.length - 1; i++)
-                    if (cpy(key, now.value[i].first))
-                        break;
-                file.seekg(now.son[i]);
-                file.read(reinterpret_cast<char *>(&now), sizeof(node));
-            }
-            for (int i = 0; i < now.length; i++)
-                if (cpy(key, now.value[i].first)) {
-                    file.close();
-                    return now.value[i].first;
-                }
-            if (now.next == -1) {
-                file.close();
-                return key;
-            } else {
-                file.seekg(now.next);
-                file.read(reinterpret_cast<char *>(&now), sizeof(node));
-                file.close();
-                return now.value[0].first;
-            }
-        }*/
 
         sjtu::vector<value_type> traverse_val(const Key &l, const Key &r) {
-            sjtu::vector<value_type> vec_tmp;
             file.open(file_name);
             file.read(reinterpret_cast<char *>(&root), sizeof(node));
-            now = root;//!
+            if (!root.length) {
+                file.close();
+                throw int();
+            }
+            now = root;
             while (!now.is_leave) {
                 int l1 = 0, r1 = now.length - 2;
                 while (l1 <= r1) {
                     int mid = (l1 + r1) >> 1;
-                    if (cpy(l, now.value[mid].first)) r1 = mid - 1;
+                    if (cpy(l, now.value[mid])) r1 = mid - 1;
                     else l1 = mid + 1;
                 }
-                /*for (i = 0; i < now.length - 1; i++)
-                    if (cpy(l, now.value[i].first))
-                        break;*/
                 file.seekg(now.son[l1]);
                 file.read(reinterpret_cast<char *>(&now), sizeof(node));
             }
-            int l1 = 0, r1 = now.length - 1;
-            while (l1 <= r1) {
-                int mid = (l1 + r1) >> 1;
-                if (!cpy(now.value[mid].first, l)) r1 = mid - 1;
-                else l1 = mid + 1;
+            file_leaves.open(file_leaves_name);
+            file_leaves.seekg(now.leave_address);
+            file_leaves.read(reinterpret_cast<char *>(&now_l), sizeof(node_leaves));
+            file.close();
+            sjtu::vector<value_type> vec_tmp;
+            /*file_leaves.open(file_leaves_name);
+            file_leaves.seekg(0);
+            int x;
+            file_leaves.read(reinterpret_cast<char *>(&x), sizeof(int));
+            if (!x) {
+                file_leaves.close();
+                return vec_tmp;
             }
-            /*int i;
-            for (i = 0; i < now.length; i++)
-                if (!cpy(now.value[i].first, l)) {
-                    //vec_tmp.push_back(now.value[i].second);
-                    break;
-                }*/
+            file_leaves.seekg(x);
+            file_leaves.read(reinterpret_cast<char *>(&now_l), sizeof(node_leaves));*/
+            while (now_l.value[now_l.length - 1].first < l) {
+                if (now_l.next == -1) {
+                    file_leaves.close();
+                    return vec_tmp;
+                }
+                file_leaves.seekg(now_l.next);
+                file_leaves.read(reinterpret_cast<char *>(&now_l), sizeof(node_leaves));
+            }
             while (1) {
-                for (int j = l1; j < now.length; j++) {
-                    if (!cpy(r, now.value[j].first))
-                        vec_tmp.push_back(now.value[j]);
-                    else {
-                        file.close();
+                for (int i = 0; i < now_l.length; i++) {
+                    if (now_l.value[i].first >= l && now_l.value[i].first <= r) {
+                        vec_tmp.push_back(now_l.value[i]);
+                    } else if (now_l.value[i].first > r) {
+                        file_leaves.close();
                         return vec_tmp;
                     }
                 }
-                if (now.next == -1) break;
-                file.seekg(now.next);
-                file.read(reinterpret_cast<char *>(&now), sizeof(now));
-                l1 = 0;
+                if (now_l.next == -1) {
+                    file_leaves.close();
+                    return vec_tmp;
+                }
+                file_leaves.seekg(now_l.next);
+                file_leaves.read(reinterpret_cast<char *>(&now_l), sizeof(node_leaves));
             }
-            file.close();
-            return vec_tmp;
         }
 
         sjtu::vector<T> traverse(const Key &l, const Key &r) {
-            sjtu::vector<T> vec_tmp;
             file.open(file_name);
             file.read(reinterpret_cast<char *>(&root), sizeof(node));
-            now = root;//!
+            if (!root.length) {
+                file.close();
+                throw int();
+            }
+            now = root;
             while (!now.is_leave) {
                 int l1 = 0, r1 = now.length - 2;
                 while (l1 <= r1) {
                     int mid = (l1 + r1) >> 1;
-                    if (cpy(l, now.value[mid].first)) r1 = mid - 1;
+                    if (cpy(l, now.value[mid])) r1 = mid - 1;
                     else l1 = mid + 1;
                 }
-                /*for (i = 0; i < now.length - 1; i++)
-                    if (cpy(l, now.value[i].first))
-                        break;*/
                 file.seekg(now.son[l1]);
                 file.read(reinterpret_cast<char *>(&now), sizeof(node));
             }
-            int l1 = 0, r1 = now.length - 1;
-            while (l1 <= r1) {
-                int mid = (l1 + r1) >> 1;
-                if (!cpy(now.value[mid].first, l)) r1 = mid - 1;
-                else l1 = mid + 1;
+            file_leaves.open(file_leaves_name);
+            file_leaves.seekg(now.leave_address);
+            file_leaves.read(reinterpret_cast<char *>(&now_l), sizeof(node_leaves));
+            file.close();
+            sjtu::vector<T> vec_tmp;
+            /*file_leaves.open(file_leaves_name);
+            file_leaves.seekg(0);
+            long long x;
+            file_leaves.read(reinterpret_cast<char *>(&x), sizeof(long long));
+            if (!x) {
+                file_leaves.close();
+                return vec_tmp;
             }
-            /*int i;
-            for (i = 0; i < now.length; i++)
-                if (!cpy(now.value[i].first, l)) {
-                    //vec_tmp.push_back(now.value[i].second);
-                    break;
-                }*/
+            file_leaves.seekg(x);
+            file_leaves.read(reinterpret_cast<char *>(&now_l), sizeof(node_leaves));*/
+            while (now_l.value[now_l.length - 1].first < l) {
+                if (now_l.next == -1) {
+                    file_leaves.close();
+                    return vec_tmp;
+                }
+                file_leaves.seekg(now_l.next);
+                file_leaves.read(reinterpret_cast<char *>(&now_l), sizeof(node_leaves));
+            }
             while (1) {
-                for (int j = l1; j < now.length; j++) {
-                    if (!cpy(r, now.value[j].first))
-                        vec_tmp.push_back(now.value[j].second);
-                    else {
-                        file.close();
+                for (int i = 0; i < now_l.length; i++) {
+                    if (!(now_l.value[i].first < l) && !(r < now_l.value[i].first)) {
+                        vec_tmp.push_back(now_l.value[i].second);
+                    } else if (r < now_l.value[i].first) {
+                        file_leaves.close();
                         return vec_tmp;
                     }
                 }
-                if (now.next == -1) break;
-                file.seekg(now.next);
-                file.read(reinterpret_cast<char *>(&now), sizeof(now));
-                l1 = 0;
+                if (now_l.next == -1) {
+                    file_leaves.close();
+                    return vec_tmp;
+                }
+                file_leaves.seekg(now_l.next);
+                file_leaves.read(reinterpret_cast<char *>(&now_l), sizeof(node_leaves));
             }
-            file.close();
-            return vec_tmp;
         }
     };
 }

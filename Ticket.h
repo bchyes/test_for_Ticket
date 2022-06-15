@@ -44,6 +44,10 @@ struct Ticket {
     Ticket(const Ticket2 &a,const std::string &f,const std::string &t):
         trainID(a.trainID),From(f),To(t),TimeL(a.TimeL),TimeR(a.TimeR),cost(a.cost),time(a.time),num(a.num){}
 
+    
+    Ticket(const Ticket2 &a,const std::string &f,const std::string &t,const int &fl):
+        trainID(a.trainID),From(f),To(t),TimeL(a.TimeL),TimeR(a.TimeR),cost(a.cost),time(fl),num(a.num){}
+
     Ticket() : cost(0), time(0), num(2e9) {}
 
     Ticket(const sjtu::string &res) : trainID(res) {}
@@ -112,106 +116,12 @@ bool cmp2(const Ticket2 &a, const Ticket2 &b) {
 }
 
 typedef sjtu::pair<size_t, int> type1;
-typedef sjtu::pair<sjtu::string, Ticket> type2;
 
+struct Pendtype{
+    size_t username;
+    int num,l,r,kth;
+    Pendtype(){}
 
-class TicketManagement {
-private:
-
-    sjtu::bpt<type1, Ticket, std::hash<type1> > get_ticket;//(username,kth) -> Ticket
-    sjtu::bpt<type1, type2, std::hash<type1>> inqu_ticket;//(trainID,timestamp) -> (username,Ticket)
-    sjtu::bpt<size_t, int> num;//username -> tt
-    sjtu::bpt<type1, int, std::hash<type1>> pos_timestamp;//(username,kth) -> timestamp
-    sjtu::bpt<int, int> pos_back;//timestamp ->kth
-
-
-public:
-    TicketManagement();
-
-    ~TicketManagement();
-
-    void insert_ticket(const sjtu::string &username, const int &timestamp, const Ticket &t, const bool flag);
-
-    void query_order(const sjtu::string &username);
-
-    Ticket refund_ticket(const sjtu::string &username, const int &k);
-
-    sjtu::vector<sjtu::pair<type1, type2> > all_ticket(const sjtu::string &username);
-
-    void Update_ticket(const sjtu::string &username, const Ticket &t, const int &timestamp);
-
-    void Reset();
-
+    Pendtype(const size_t &username_,const int &num_,const int &l_,const int &r_,const int &k_):
+        username(username_),num(num_),l(l_),r(r_),kth(k_){}
 };
-
-TicketManagement::TicketManagement() : get_ticket("file_get_ticket.dat", "file_get_ticket_delete.dat"),
-                                       inqu_ticket("file_inqu_ticket.dat", "file_inqu_ticket_delete.dat"),
-                                       num("file_num.dat", "file_num_delete.dat"),
-                                       pos_timestamp("file_pos_timestamp.dat", "file_pos_timestamp_delete.dat"),
-                                       pos_back("file_pos_back.dat", "file_pos_back_delete.dat") {}
-
-TicketManagement::~TicketManagement() {};
-
-void
-TicketManagement::insert_ticket(const sjtu::string &username_, const int &timestamp, const Ticket &t, const bool flag) {
-    size_t username = H(username_.change());
-    Ticket tmp = t;
-    if (flag == 0)tmp.time = 1;
-    else tmp.time = 2;
-    if (num.empty() || !num.count(username))num.insert(type1(username, 0));
-    int tt = num.find(username);
-    get_ticket.insert(sjtu::pair<type1, Ticket>(type1(username, ++tt), tmp));
-    pos_timestamp.insert(sjtu::pair<type1, int>(type1(username, tt), timestamp));
-    pos_back.insert(sjtu::pair<int, int>(timestamp, tt));
-    num.modify(username, tt);
-    if (tmp.time == 2)
-        inqu_ticket.insert(sjtu::pair<type1, type2>(type1(H(t.trainID.change()), timestamp), type2(username_, tmp)));
-}
-
-void TicketManagement::query_order(const sjtu::string &username_) {
-    if (get_ticket.empty())return void(puts("0"));
-    size_t username = H(username_.change());
-    const sjtu::vector<Ticket> &vec = get_ticket.traverse(type1(username, 0), type1(username, 2e9));
-    printf("%d\n", (int) vec.size());
-    for (int i = (int) vec.size() - 1; i >= 0; i--) {
-        if (vec[i].time == 1)printf("[success] ");
-        else if (vec[i].time == 2)printf("[pending] ");
-        else printf("[refunded] ");
-        vec[i].print();
-    }
-}
-
-Ticket TicketManagement::refund_ticket(const sjtu::string &username_, const int &k) {
-    size_t username = H(username_.change());
-    if (num.empty() || !num.count(username))return Ticket("");
-    int tt = num.find(username);
-    if (k > tt)return Ticket("");
-    Ticket t = get_ticket.find(type1(username, tt - k + 1));
-    if (t.time == 3)return Ticket("");
-    int last_ = t.time;
-    t.time = 3;
-    get_ticket.modify(type1(username, tt - k + 1), t);
-    if (last_ == 2)inqu_ticket.erase(type1(H(t.trainID.change()), pos_timestamp.find(type1(username, tt - k + 1))));
-    t.time = last_;
-    return t;
-}
-
-sjtu::vector<sjtu::pair<type1, type2> > TicketManagement::all_ticket(const sjtu::string &trainID_) {
-    if (inqu_ticket.empty())return sjtu::vector<sjtu::pair<type1, type2> >();
-    size_t trainID = H(trainID_.change());
-    return inqu_ticket.traverse_val(type1(trainID, 0), type1(trainID, 2e9));
-}
-
-void TicketManagement::Update_ticket(const sjtu::string &username_, const Ticket &t, const int &timestamp) {
-    size_t username = H(username_.change()), trainID = H(t.trainID.change());
-    inqu_ticket.erase(type1(trainID, timestamp));
-    int bk = pos_back.find(timestamp);
-    Ticket tmp = get_ticket.find(type1(username, bk));
-    tmp.time = 1;
-    get_ticket.modify(type1(username, bk), tmp);
-}
-
-void TicketManagement::Reset() {
-    get_ticket.clean();
-    inqu_ticket.clean();
-}
