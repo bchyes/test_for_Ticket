@@ -87,7 +87,7 @@ struct Transfer_Ticket {
 
     Transfer_Ticket(int x) : time(x) {}
 
-    Transfer_Ticket(const Ticket &a, const Ticket &b, const int &t) : A(a), B(b) {
+    Transfer_Ticket(const Ticket2 &x, const Ticket2 &y, const int &t,const std::string &a,const std::string &b,const std::string &c) : A(x,a,b), B(y,b,c) {
         time = t + A.time + B.time;
         cost = A.cost + B.cost;
     }
@@ -113,6 +113,18 @@ bool cmp1(const Ticket2 &a, const Ticket2 &b) {
 
 bool cmp2(const Ticket2 &a, const Ticket2 &b) {
     return a.cost < b.cost || (a.cost == b.cost && a.trainID < b.trainID);
+}
+
+bool cmp3(const Ticket2 &a, const Ticket2 &b) {
+    if(a.time!=b.time)return a.time<b.time;
+    if(a.cost!=b.cost)return a.cost<b.cost;
+    return a.trainID<b.trainID;
+}
+
+bool cmp4(const Ticket2 &a, const Ticket2 &b) {
+    if(a.cost!=b.cost)return a.cost<b.cost;
+    if(a.time!=b.time)return a.time<b.time;
+    return a.trainID<b.trainID;
 }
 
 typedef sjtu::pair<size_t, int> type1;
