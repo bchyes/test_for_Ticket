@@ -11,8 +11,8 @@
 #include "linked_hashmap.hpp"
 #include "string.hpp"
 
-//void Rollback(int time);//ʱ�����
-
+//void Rollback(int time);//ʱ����� 
+ 
 enum Command{add_user,login,logout,query_profile,modify_profile,query_order,
 			add_train,delete_train,release_train,query_train,query_ticket,query_transfer,
 			buy_ticket,refund_ticket,
@@ -21,8 +21,8 @@ enum Command{add_user,login,logout,query_profile,modify_profile,query_order,
 const std::string Command_[]={"add_user","login","logout","query_profile","modify_profile","query_order",
 			"add_train","delete_train","release_train","query_train","query_ticket","query_transfer",
 			"buy_ticket","refund_ticket",
-			"rollback","clean","exit"};
-
+			"rollback","clean","exit"}; 
+			
 Command find_Command(std::string s){
 	for(int i=0;;i++)if(s==Command_[i])return (Command)i;
 	return (Command)0;
@@ -66,12 +66,12 @@ void Add_train(){
 	static int prices[M],travelTimes[M],stopoverTimes[M];
 	static sjtu::string stations[M];
 	Date saleDateL(p['d'].substr(0,5)),saleDateR(p['d'].substr(6,5));
-
+	
 	get_arr(prices,p['p']);
 	get_arr(travelTimes,p['t']);
 	get_arr(stopoverTimes,p['o']);
 	get_arr(stations,p['s']);
-
+	
 	train.add_train( p['i'],get_number(p['n']),stations,get_number(p['m']),
 			prices,travelTimes,stopoverTimes,(Date)p['x'],saleDateL,saleDateR,p['y'][0] );
 }
@@ -99,7 +99,7 @@ void Reset(){
 }
 
 void Process(){//��ȡָ�ִ��
-
+	
 	token_scanner str;
 	std::string *p=Str;
 	//int CT=0;
@@ -125,21 +125,21 @@ void Process(){//��ȡָ�ִ��
 			case logout: user.logout(p['u']);break;
 			case query_profile: user.query_profile(p['c'],p['u']);break;
 			case modify_profile: user.modify_profile(p['c'],p['u'],p['p'],p['n'],p['m'],get_number(p['g']));break;
-
+			
 			case add_train: Add_train();break;
 			case delete_train: train.delete_train(p['i']);break;
 			case release_train: train.release_train(p['i'],timestamp);break;
 			case query_train: train.query_train(p['i'],p['d']);break;
 			case query_ticket: train.query_ticket(p['s'],p['t'],p['d'],p['p'].size()>0&&p['p'][0]=='c');break;
 			case query_transfer: train.query_transfer(p['s'],p['t'],p['d'],p['p'].size()>0&&p['p'][0]=='c');break;
-
+			
 			case buy_ticket: Buy_ticket(p['u'],p['i'],p['d'],get_number(p['n']),p['f'],p['t'],p['q']);break;
-			case refund_ticket: Refund_ticket(p['u'],p['n']);break;
+			case refund_ticket: Refund_ticket(p['u'],p['n']);break; 
 			case query_order: Query_order(p['u']);break;
-
+			
 			case rollback: break;
-			case clean: Reset();break;
-			case exit_: flag=1;break;
+			case clean: Reset();break; 
+			case exit_: flag=1;break; 
 		}
 		if(flag){
 			puts("bye");
