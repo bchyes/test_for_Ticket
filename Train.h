@@ -10,7 +10,7 @@
 #include "linked_hashmap.hpp"
 
 
-const int M = 101;
+const int M = 105;
 typedef sjtu::pair<size_t, size_t> type3;
 
 class TrainManagement;
@@ -109,13 +109,13 @@ private:
     sjtu::linked_hashmap<size_t, Basictrain > bas;
     sjtu::linked_hashmap<size_t, sjtu::string> trainid;
 
-    sjtu::bpt<size_t, train,254,4,6>tra;
-    sjtu::bpt<size_t, Left_Ticket,254,4,10> Tk;
-    sjtu::bpt<type3, Stations,169,72,10> sta;
+    sjtu::bpt<size_t, train,254,4>tra;
+    sjtu::bpt<size_t, Left_Ticket,254,4> Tk;
+    sjtu::bpt<type3, Stations,169,72> sta;
 
-    sjtu::bpt<type1, Ticket ,169,19,2> Get_ticket;//(username,kth) -> Ticket
-    sjtu::bpt<sjtu::pair<type1,int>, Pendtype,127,85,2> inqu_ticket;//((trainID,kth),timestamp) -> (username,Ticket)
-    sjtu::bpt<size_t, int,254,254,1> Num;//username -> tt
+    sjtu::bpt<type1, Ticket ,169,19> Get_ticket;//(username,kth) -> Ticket
+    sjtu::bpt<sjtu::pair<type1,int>, Pendtype,127,85> inqu_ticket;//((trainID,kth),timestamp) -> (username,Ticket)
+    sjtu::bpt<size_t, int,254,254> Num;//username -> tt
 
 public:
     TrainManagement();
@@ -165,12 +165,12 @@ public:
 };
 
 void TrainManagement::Print(){
-    tra.print();
+    /*tra.print();
     Tk.print();
     sta.print();
     Get_ticket.print();
     inqu_ticket.print();
-    Num.print();
+    Num.print();*/
 }
 
 int TrainManagement::query_ticket(const sjtu::string &trainID_, const Date &date, const sjtu::string From_,const sjtu::string To_) {
@@ -179,13 +179,13 @@ int TrainManagement::query_ticket(const sjtu::string &trainID_, const Date &date
     return Tk.find(trainID).query_ticket(date-L.lef,L.pos,R.pos);
 }
 
-TrainManagement::TrainManagement() : tra("file_train.dat","file_train2.dat", "file_train_delete.dat","file_train2_delete.dat"),
-                                     sta("file_sta.dat","file_sta2.dat", "file_sta_delete.dat","file_sta2_delete.dat"),
-                                     Tk("file_Ticket.dat","file_Ticket2.dat", "file_Ticket_delete.dat","file_Ticket2_delete.dat"),
+TrainManagement::TrainManagement() : tra("file_train.dat","file_train2.dat"/*, "file_train_delete.dat","file_train2_delete.dat"*/),
+                                     sta("file_sta.dat","file_sta2.dat"/*, "file_sta_delete.dat","file_sta2_delete.dat"*/),
+                                     Tk("file_Ticket.dat","file_Ticket2.dat"/*, "file_Ticket_delete.dat","file_Ticket2_delete.dat"*/),
 
-                                     Get_ticket("file_get_ticket.dat","file_get_ticket2.dat", "file_get_ticket_delete.dat","file_get_ticket2_delete.dat"),
-                                     inqu_ticket("file_inqu_ticket.dat","file_inqu_ticket2.dat", "file_inqu_ticket_delete.dat","file_inqu_ticket2_delete.dat"),
-                                     Num("file_num.dat","file_num2.dat", "file_num_delete.dat","file_num2_delete.dat"){
+                                     Get_ticket("file_get_ticket.dat","file_get_ticket2.dat"/*, "file_get_ticket_delete.dat","file_get_ticket2_delete.dat"*/),
+                                     inqu_ticket("file_inqu_ticket.dat","file_inqu_ticket2.dat"/*, "file_inqu_ticket_delete.dat","file_inqu_ticket2_delete.dat"*/),
+                                     Num("file_num.dat","file_num2.dat"/*, "file_num_delete.dat","file_num2_delete.dat"*/){
                                         if(tra.empty())return;
                                         const sjtu::vector<sjtu::pair<size_t,train> > &vec=tra.traverse_val(0,(size_t)-1);
                                         for(int i=0;i<(int)vec.size();i++){
@@ -312,8 +312,8 @@ void TrainManagement::Update_ticket(const Ticket &t) {
     Tk.modify(trainID, now);
 }
 
-
-sjtu::vector<Ticket2> A,tmp;
+int ticket_num;
+Ticket2 A[M * M];
 
 bool (*cmp)(const Ticket2 &a, const Ticket2 &b);
 
@@ -321,19 +321,20 @@ bool (*Cmp)(const Transfer_Ticket &a, const Transfer_Ticket &b);
 
 void sort(int l, int r) {
     if (l >= r)return;
-    int mid=l+r>>1;
-    sort(l,mid),sort(mid+1,r);
-    int i=l,j=mid+1,k=l;
-    while(i<=mid&&j<=r)
-        if(cmp(A[i],A[j]))tmp[k++]=A[i++];
-        else tmp[k++]=A[j++];
-    while(i<=mid)tmp[k++]=A[i++];
-    while(j<=r)tmp[k++]=A[j++];
-    for(i=l;i<=r;i++)A[i]=tmp[i];
+    Ticket2 key = A[l];
+    int i = l, j = r;
+    while (i < j) {
+        while (i < j && !cmp(A[j], key))j--;
+        while (i < j && cmp(A[i], key))i++;
+        if (i < j)std::swap(A[i], A[j]);
+    }
+    sort(l, i);
+    sort(i + 1, r);
 }
 
 void TrainManagement::query_ticket(const std::string &From, const std::string &To, const Date &date, bool flag) {
     if (sta.empty())return void(puts("0"));
+    ticket_num = 0;
     const sjtu::vector<sjtu::pair<type3,Stations> > &vec1=sta.traverse_val(type3(H(From),0),type3(H(From),(size_t)-1));
     const sjtu::vector<sjtu::pair<type3,Stations> > &vec2=sta.traverse_val(type3(H(To),0),type3(H(To),(size_t)-1));
     if(vec1.size()==0||vec2.size()==0)return void(puts("0"));
@@ -344,17 +345,16 @@ void TrainManagement::query_ticket(const std::string &From, const std::string &T
             if(L.pos<R.pos){
                 size_t trainID=vec1[i].first.second;
                 const Ticket2 &tik=get_ticket(trainid[trainID],L,R,date);
-                if(tik.cost!=-1)A.push_back(tik),tmp.push_back(tik);
+                if(tik.cost!=-1)A[++ticket_num]=tik;
             }
         }
     }
 
     cmp = flag == 0 ? cmp1 : cmp2;
-    sort(0, (int)A.size()-1);
+    sort(1, ticket_num);
 
-    printf("%d\n", (int)A.size());
-    for (int i = 0; i < (int)A.size(); i++)A[i].print(From,To);
-    A.clear(),tmp.clear();
+    printf("%d\n", ticket_num);
+    for (int i = 1; i <= ticket_num; i++)A[i].print(From,To);
 }
 
 sjtu::pair<int, Ticket2>
@@ -389,6 +389,7 @@ TrainManagement::get_ticket2(const sjtu::string trainID_, const Stations &Lx, co
 void TrainManagement::query_transfer(const std::string &From, const std::string &To, const Date &date, bool flag) {
     
     if (sta.empty())return void(puts("0"));
+    ticket_num = 0;
     const sjtu::vector<sjtu::pair<type3,Stations> > &vec1=sta.traverse_val(type3(H(From),0),type3(H(From),(size_t)-1));
     const sjtu::vector<sjtu::pair<type3,Stations> > &vec2=sta.traverse_val(type3(H(To),0),type3(H(To),(size_t)-1));
 
