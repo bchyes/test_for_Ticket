@@ -7,7 +7,6 @@
 #include "utility.hpp"
 #include "bpt.h" 
 #include "linked_hashmap.hpp"
-#include "stack.h"
 
 class User_Management;
 
@@ -26,25 +25,17 @@ struct User{
 	
 };
 
-struct Rollback_User{
-	int time;
-	User user;
-	Rollback_User(const int &a,const User &b):time(a),user(b){}
-	Rollback_User(){}
-};
-
 class User_Management{
 private:
-	sjtu::bpt<size_t,User,254,32,1> pos;//UserID���û���ӳ��
+	sjtu::bpt<size_t,User,340,34,1> pos;//UserID���û���ӳ��
 	sjtu::linked_hashmap<size_t,bool>log;
-	sjtu::Stack<Rollback_User> stk;
 public:
 	User_Management();
 
 	~User_Management();
 	
     void add_user(const std::string &cur_username,const std::string &username,const std::string &pwd,const std::string &name,
-	 			  const std::string &mailAddr,const int &privilege,const int &timestamp);//add_user command 
+	 			  const std::string &mailAddr,const int &privilege);//add_user command 
     
     void login(const std::string &username,const std::string &pwd);//login command 
     
@@ -53,7 +44,7 @@ public:
     void query_profile(const std::string &cur_username,const std::string &username);//query_profile command 
     
     void modify_profile(const std::string &cur_username,const std::string &username,const std::string &pwd,const std::string &name,
-	 			  const std::string &mailAddr,const int &privilege,const int &timestamp);//modify_profile command 
+	 			  const std::string &mailAddr,const int &privilege);//modify_profile command 
 	 			
 	bool Ask_Login(const std::string &username); 			
 	
@@ -62,6 +53,10 @@ public:
 	void Print();
 
 	void Rollback(const int &time);
+
+	double Size(){
+		return (log.Size())/1024.0+pos.Size();
+	}
 };
 void User_Management::Print(){
 	pos.print();
@@ -85,24 +80,20 @@ User::User(const std::string &username_,const std::string &password_,const std::
 
 User::~User(){}
 
-User_Management::User_Management():pos("file_user.dat","file_user2.dat","file_user_delete.dat","file_user2_delete.dat"),stk("file_stk_user.dat"){}
+User_Management::User_Management():pos("file_user.dat","file_user2.dat","file_user_delete.dat","file_user2_delete.dat"){}
 
 User_Management::~User_Management(){}
 
-void User_Management::add_user(const std::string &cur_username_,const std::string &username_,const std::string &pwd,const std::string &name,const std::string &mailAddr,const int &privilege,const int &timestamp){
+void User_Management::add_user(const std::string &cur_username_,const std::string &username_,const std::string &pwd,const std::string &name,const std::string &mailAddr,const int &privilege){
 	size_t cur_username=H(cur_username_),username=H(username_);
 	if(pos.empty()){
-		const User &ins=User(username_,pwd,name,mailAddr,privilege);
-		pos.insert( sjtu::pair<size_t,User>( username, ins) );
-		stk.push(Rollback_User(timestamp<<1, ins ));
+		pos.insert( sjtu::pair<size_t,User>( username,User(username_,pwd,name,mailAddr,privilege) ) );
 		puts("0");
 		return;
 	}
 	if(!log.count(cur_username)||pos.count(username))return void(puts("-1"));
 	if(privilege>=pos.find(cur_username).privilege)return void(puts("-1"));
-	const User &ins=User(username_,pwd,name,mailAddr,privilege);
-	pos.insert( sjtu::pair<size_t,User>( username, ins) );
-	stk.push(Rollback_User(timestamp<<1,ins));
+	pos.insert( sjtu::pair<size_t,User>( username,User(username_,pwd,name,mailAddr,privilege) ) );
 	puts("0");
 }
 
@@ -137,7 +128,7 @@ void User_Management::query_profile(const std::string &cur_username_,const std::
 	std::cout<<Ask.username<<' '<<Ask.name<<' '<<Ask.mailAddr<<' '<<Ask.privilege<<std::endl;
 }
 
-void User_Management::modify_profile(const std::string &cur_username_,const std::string &username_,const std::string &pwd,const std::string &name,const std::string &mailAddr,const int &privilege,const int &timestamp){
+void User_Management::modify_profile(const std::string &cur_username_,const std::string &username_,const std::string &pwd,const std::string &name,const std::string &mailAddr,const int &privilege){
 	size_t cur_username=H(cur_username_),username=H(username_);
 	if(!log.count(cur_username))return void(puts("-1"));
 	const User &Cur=pos.find(cur_username);
@@ -145,7 +136,6 @@ void User_Management::modify_profile(const std::string &cur_username_,const std:
 	if(tmp.first==0)return void(puts("-1"));
 	User Ask=tmp.second;
 	if((username_!=cur_username_&&Cur.privilege<=Ask.privilege)||privilege>=Cur.privilege)return void(puts("-1"));
-	stk.push(Rollback_User(timestamp<<1|1,Ask));
 	if(pwd.size()>0)strcpy(Ask.password,pwd.c_str());
 	if(name.size()>0)strcpy(Ask.name,name.c_str());
 	if(mailAddr.size()>0)strcpy(Ask.mailAddr,mailAddr.c_str());
@@ -160,17 +150,4 @@ bool User_Management::Ask_Login(const std::string &username_){
 
 void User_Management::Reset(){
 	pos.clean();
-}
-
-void User_Management::Rollback(const int &time){
-	log.clear();
-	while(!stk.empty()){//0 delete 
-		auto now=stk.top();
-		if((now.time>>1)<time)break;
-		stk.pop();
-		size_t id=H( std::string(now.user.username) );
-		if(now.time&1){
-			pos.modify(id,now.user);
-		}else pos.erase(id);
-	}
 }

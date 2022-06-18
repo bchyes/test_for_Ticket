@@ -14,7 +14,7 @@ namespace sjtu {
 
     class string {
     private:
-        char alpha[45];
+        char alpha[41];
         int len = 0;
     public:
         string() {

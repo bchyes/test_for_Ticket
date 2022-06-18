@@ -11,6 +11,7 @@
 #include "linked_hashmap.hpp"
 #include "string.hpp"
 
+//void Rollback(int time);//ʱ�����
 
 enum Command{add_user,login,logout,query_profile,modify_profile,query_order,
     add_train,delete_train,release_train,query_train,query_ticket,query_transfer,
@@ -72,7 +73,7 @@ void Add_train(){
     get_arr(stations,p['s']);
 
     train.add_train( p['i'],get_number(p['n']),stations,get_number(p['m']),
-                     prices,travelTimes,stopoverTimes,(Date)p['x'],saleDateL,saleDateR,p['y'][0],timestamp );
+                     prices,travelTimes,stopoverTimes,(Date)p['x'],saleDateL,saleDateR,p['y'][0] );
 }
 
 void Buy_ticket(const std::string &username_,const std::string &trainID_,const Date &date,const int &num,const std::string &fr,const std::string &to,const std::string &flag){
@@ -84,7 +85,7 @@ void Refund_ticket(const std::string &username_,const std::string &kth){
     int k=1;
     if(kth.size()!=0)k=get_number(kth);
     if(!user.Ask_Login(username_))return void(puts("-1"));
-    train.refund_ticket(H(username_),k,timestamp);
+    train.refund_ticket(H(username_),k);
 }
 
 void Query_order(const std::string &username_){
@@ -97,18 +98,11 @@ void Reset(){
     train.Reset();
 }
 
-void Rollback(const int &time){
-    if(time>timestamp)puts("-1");
-    else puts("0");
-    user.Rollback(time);
-    train.Rollback(time);
-}
-
 void Process(){//��ȡָ�ִ��
 
     token_scanner str;
     std::string *p=Str;
-    int CT=0;
+//	int CT=0;
     while(1){
         bool flag=0,rd=str.read();
         timestamp=get_number(str.next_token());
@@ -121,19 +115,19 @@ void Process(){//��ȡָ�ִ��
             p[(int)s[1]]=c;
             s=str.next_token();
         }
-        CT++;
-        if(CT%1000==0){
-            std::cerr<<CT/1000<<std::endl;
-        }
+//		CT++;
+//		if(CT%1000==0){
+//			std::cerr<<train.Size()+user.Size()<<std::endl;
+//		}
         switch(cmd){
-            case add_user: user.add_user(p['c'],p['u'],p['p'],p['n'],p['m'],get_number(p['g']),timestamp);break;
+            case add_user: user.add_user(p['c'],p['u'],p['p'],p['n'],p['m'],get_number(p['g']));break;
             case login: user.login(p['u'],p['p']);break;
             case logout: user.logout(p['u']);break;
             case query_profile: user.query_profile(p['c'],p['u']);break;
-            case modify_profile: user.modify_profile(p['c'],p['u'],p['p'],p['n'],p['m'],get_number(p['g']),timestamp);break;
+            case modify_profile: user.modify_profile(p['c'],p['u'],p['p'],p['n'],p['m'],get_number(p['g']));break;
 
             case add_train: Add_train();break;
-            case delete_train: train.delete_train(p['i'],timestamp);break;
+            case delete_train: train.delete_train(p['i']);break;
             case release_train: train.release_train(p['i'],timestamp);break;
             case query_train: train.query_train(p['i'],p['d']);break;
             case query_ticket: train.query_ticket(p['s'],p['t'],p['d'],p['p'].size()>0&&p['p'][0]=='c');break;
@@ -143,7 +137,7 @@ void Process(){//��ȡָ�ִ��
             case refund_ticket: Refund_ticket(p['u'],p['n']);break;
             case query_order: Query_order(p['u']);break;
 
-            case rollback: Rollback(get_number(p['t']));break;
+            case rollback: break;
             case clean: Reset();break;
             case exit_: flag=1;break;
         }
@@ -152,6 +146,7 @@ void Process(){//��ȡָ�ִ��
             break;
         }
         if(!rd)break;
+
     }
 }
 

@@ -8,21 +8,21 @@ const int DAY[]={0,1,2,3,4,5,30,31,31,30,31,30,31};
 struct Date{
 	int m,d,hr,mi;
 	
-	int change(int fl){
+	inline int change(int fl)const {
 		if(fl==0)return (24-hr)*60-mi;
 		return hr*60+mi;
 	}
 	
-	bool Compare(const Date &res){
+	inline bool Compare(const Date &res)const {
 		return hr<res.hr||(hr==res.hr&&mi<=res.mi);
 	}
 	
-	int del(const Date &res)const {
+	inline int del(const Date &res)const{
 		return (hr-res.hr)*60+mi-res.mi;
 	}
 
 	
-	void print()const{
+	inline void print()const{
 		printf("0%d-%02d %02d:%02d",m,d,hr,mi);
 	} 
 	
@@ -76,8 +76,13 @@ struct Date{
 		return ret+d-D;
 	}
 
-	int get_time(const Date &res) const {
+	inline int get_time(const Date &res) const {
 		return del(res)+((*this)-res)*1440;
 	}
-
+	
+	inline Date ad_day(const int &x)const {
+		int D=d+x,M=m;
+		while(D>DAY[M])D-=DAY[M++];
+		return Date(M,D,hr,mi);
+	}
 };
