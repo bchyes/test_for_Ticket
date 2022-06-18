@@ -27,7 +27,7 @@ struct User{
 
 class User_Management{
 private:
-	sjtu::bpt<size_t,User,340,34,1> pos;//UserID���û���ӳ��
+	sjtu::bpt<size_t,User,381,48,1> pos;//UserID���û���ӳ��
 	sjtu::linked_hashmap<size_t,bool>log;
 public:
 	User_Management();
@@ -53,10 +53,6 @@ public:
 	void Print();
 
 	void Rollback(const int &time);
-
-	double Size(){
-		return (log.Size())/1024.0+pos.Size();
-	}
 };
 void User_Management::Print(){
 	pos.print();

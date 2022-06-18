@@ -109,13 +109,13 @@ private:
     sjtu::linked_hashmap<size_t, Basictrain > bas;
     sjtu::linked_hashmap<size_t, sjtu::string> trainid;
 
-    sjtu::bpt<size_t, train,340,4,2>tra;
-    sjtu::bpt<size_t, Left_Ticket,340,4,8> Tk;
-    sjtu::bpt<type3, Stations,204,73,8> sta;
+    sjtu::bpt<size_t, train,381,4,2>tra;
+    sjtu::bpt<size_t, Left_Ticket,381,4,3> Tk;
+    sjtu::bpt<type3, Stations,253,108,3> sta;
 
-    sjtu::bpt<type1, Ticket ,204,25,3> Get_ticket;//(username,kth) -> Ticket
-    sjtu::bpt<sjtu::pair<type1,int>, Pendtype,146,85,3> inqu_ticket;//((trainID,kth),timestamp) -> (username,Ticket)
-    sjtu::bpt<size_t, int,340,255,1> Num;//username -> tt
+    sjtu::bpt<type1, Ticket ,253,28,2> Get_ticket;//(username,kth) -> Ticket
+    sjtu::bpt<sjtu::pair<type1,int>, Pendtype,190,127,2> inqu_ticket;//((trainID,kth),timestamp) -> (username,Ticket)
+    sjtu::bpt<size_t, int,381,381,1> Num;//username -> tt
 
 public:
     TrainManagement();
@@ -162,10 +162,6 @@ public:
     void refund_ticket(const size_t &username, const int &k);
 
     void Print();
-    
-    double Size(){
-        return (bas.Size()+trainid.size())/1024.0/1024.0+tra.Size()+Tk.Size()+sta.Size()+Get_ticket.Size()+inqu_ticket.Size()+Num.Size();
-    }
 };
 
 void TrainManagement::Print(){
@@ -433,7 +429,6 @@ void TrainManagement::query_transfer(const std::string &From, const std::string 
 
         }
     }
-    //std::cerr<<T.Size()/1024.0/1024.0<<std::endl;
 
     if (First)puts("0");
     else {
@@ -507,6 +502,7 @@ void TrainManagement::refund_ticket(const size_t &username, const int &k) {
                     us.time=-us.time;
                     Get_ticket.modify(type1(x.username,x.kth),us);
                     inqu_ticket.erase(vec[i].first);
+                    //std::cerr<<"OK"<<' '<<k<<' '<<i<<' '<<inqu_ticket.count(vec[i].first)<<std::endl;
                 }
             }
             Tk.modify(trainID,tk);
