@@ -892,8 +892,8 @@ namespace sjtu {
     public:
 
         void print() {
-            printf("SIZE of node(M) = %lf\n", 1.0 * (4096 - 1 - 4 - 3 * 4) / (sizeof(Key) + 4));
-            printf("SIZE of node_leaves(N) = %lf\n", 1.0 * (4096 - 4 - 4 * 4) / (sizeof(value_type)));
+            printf("SIZE of node(M) = %lf\n", 1.0 * (4096 - 1 - 4 - 3 * 8) / (sizeof(Key) + 8));
+            printf("SIZE of node_leaves(N) = %lf\n", 1.0 * (4096 - 4 - 4 * 8) / (sizeof(value_type)));
         }
 
         explicit bpt(std::string file_name_, std::string file_leaves_name_, std::string file_delete_name_,
@@ -1086,7 +1086,7 @@ namespace sjtu {
             file_leaves.read(reinterpret_cast<char *>(&now_l), sizeof(node_leaves));
             for (int i = 0; i < now_l.length; i++)
                 if (!cpy(key, now_l.value[i].first) && !cpy(now_l.value[i].first, key)) {
-                    while (hs.Size() >= 1024ll * 1024 * mm) {
+                    while (hs.Size() >=  mm) {
                         hs.erase(hs.begin());
                     }
                     //!
@@ -1127,7 +1127,7 @@ namespace sjtu {
             file_leaves.read(reinterpret_cast<char *>(&now_l), sizeof(node_leaves));
             for (int i = 0; i < now_l.length; i++)
                 if (!cpy(key, now_l.value[i].first) && !cpy(now_l.value[i].first, key)) {
-                    while (hs.Size() >= 1024ll * 1024 * mm) {
+                    while (hs.Size() >=  mm) {
                         hs.erase(hs.begin());
                     }
                     //!
@@ -1267,7 +1267,7 @@ namespace sjtu {
                 }
                 //!
                 //!
-                while (hs.Size() >= 1024ll * 1024 * mm) {
+                while (hs.Size() >=  mm) {
                     hs.erase(hs.begin());
                 }
                 now_l.value[i].second = v;
@@ -1379,7 +1379,7 @@ namespace sjtu {
         }
 
         double Size(){
-            return hs.Size()/1024.0/1024.0;
+            return hs.Size();
         }
 
         sjtu::vector<T> traverse(const Key &l, const Key &r) {

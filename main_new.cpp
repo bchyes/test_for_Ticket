@@ -102,7 +102,7 @@ void Process(){//��ȡָ�ִ��
 
     token_scanner str;
     std::string *p=Str;
-    //int CT=0;
+//	int CT=0;
     while(1){
         bool flag=0,rd=str.read();
         timestamp=get_number(str.next_token());
@@ -115,10 +115,10 @@ void Process(){//��ȡָ�ִ��
             p[(int)s[1]]=c;
             s=str.next_token();
         }
-        //CT++;
-        //if(CT%1000==0){
-        //	std::cerr<<train.Size()+user.Size()<<std::endl;
-        //}
+//		CT++;
+//		if(CT%1000==0){
+//			std::cerr<<train.Size()+user.Size()<<std::endl;
+//		}
         switch(cmd){
             case add_user: user.add_user(p['c'],p['u'],p['p'],p['n'],p['m'],get_number(p['g']));break;
             case login: user.login(p['u'],p['p']);break;
@@ -151,8 +151,8 @@ void Process(){//��ȡָ�ִ��
 }
 
 int main(){
-//	user.Print();
-//	puts("----------");
+    //user.Print();
+    //puts("----------");
     //train.Print();
     Process();
     return 0;
