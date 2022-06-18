@@ -1379,7 +1379,7 @@ namespace sjtu {
         }
 
         double Size(){
-            return hs.Size();
+            //return hs.Size();
         }
 
         sjtu::vector<T> traverse(const Key &l, const Key &r) {
