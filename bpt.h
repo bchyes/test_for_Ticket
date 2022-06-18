@@ -68,7 +68,7 @@ namespace sjtu {
         node_leaves tmp_0_l;
         node_leaves new_tmp_l;
         node_leaves ept_l;
-        sjtu::linked_hashmap<Key, T, Hash> hs;
+        //sjtu::linked_hashmap<Key, T, Hash> hs;
         //sjtu::map<Key, T> hs;
         //static const int m = 74669;
         std::fstream file;
@@ -1062,9 +1062,9 @@ namespace sjtu {
         }
 
         sjtu::pair<bool, T> find2(const Key &key) {//按照key进行寻找
-            if (hs.count(key)) {
+            /*if (hs.count(key)) {
                 return sjtu::pair<bool, T>(1, hs.find(key)->second);
-            }
+            }*/
             file.open(file_name);
             file.read(reinterpret_cast<char *>(&root), sizeof(node));
             if (!root.length) throw int();
@@ -1086,14 +1086,14 @@ namespace sjtu {
             file_leaves.read(reinterpret_cast<char *>(&now_l), sizeof(node_leaves));
             for (int i = 0; i < now_l.length; i++)
                 if (!cpy(key, now_l.value[i].first) && !cpy(now_l.value[i].first, key)) {
-                    while (hs.Size() >=  mm) {
+                    /*while (hs.Size() >=  mm) {
                         hs.erase(hs.begin());
-                    }
+                    }*/
                     //!
 
                     file_leaves.close();
                     //!
-                    hs.insert(now_l.value[i]);
+                    //hs.insert(now_l.value[i]);
                     file.close();
                     return sjtu::pair<bool, T>(1, now_l.value[i].second);
                 }
@@ -1103,9 +1103,9 @@ namespace sjtu {
         }
 
         T find(const Key &key) {//按照key进行寻找
-            if (hs.count(key)) {
+            /*if (hs.count(key)) {
                 return hs.find(key)->second;
-            }
+            }*/
             file.open(file_name);
             file.read(reinterpret_cast<char *>(&root), sizeof(node));
             if (!root.length) throw int();
@@ -1127,13 +1127,13 @@ namespace sjtu {
             file_leaves.read(reinterpret_cast<char *>(&now_l), sizeof(node_leaves));
             for (int i = 0; i < now_l.length; i++)
                 if (!cpy(key, now_l.value[i].first) && !cpy(now_l.value[i].first, key)) {
-                    while (hs.Size() >=  mm) {
+                    /*while (hs.Size() >=  mm) {
                         hs.erase(hs.begin());
-                    }
+                    }*/
                     //!
                     file_leaves.close();
                     //!
-                    hs.insert(now_l.value[i]);
+                    //hs.insert(now_l.value[i]);
                     file.close();
                     return now_l.value[i].second;
                 }
@@ -1180,9 +1180,9 @@ namespace sjtu {
                 else l = mid + 1;
             }
             if (find_it) {
-                if (hs.count(now.value[i])) {
+                /*if (hs.count(now.value[i])) {
                     hs.erase(hs.find(now.value[i]));
-                }
+                }*/
                 value_type v_up = now_l.value[0];
                 for (int j = i; j < now_l.length - 1; j++)
                     now_l.value[j] = now_l.value[j + 1];
@@ -1262,16 +1262,16 @@ namespace sjtu {
                 else l = mid + 1;
             }
             if (find_it) {
-                if (hs.count(now_l.value[i].first)) {
+                /*if (hs.count(now_l.value[i].first)) {
                     hs.erase(hs.find(now_l.value[i].first));
-                }
+                }*/
                 //!
                 //!
-                while (hs.Size() >=  mm) {
+                /*while (hs.Size() >=  mm) {
                     hs.erase(hs.begin());
-                }
+                }*/
                 now_l.value[i].second = v;
-                hs.insert(now_l.value[i]);
+                //hs.insert(now_l.value[i]);
                 file_leaves.seekp(now_l.address);
                 file_leaves.write(reinterpret_cast<char *>(&now_l), sizeof(node_leaves));
                 file_leaves.close();
