@@ -73,7 +73,7 @@ public:
 	};
 	
 	long long Size(){
-		return 1LL*sz*sizeof(Node);
+		return 1.0*sizeof(Node)/1024.0*sz/1024.0;
 	}
 	
 	void _swap(Node* a,Node* b){
