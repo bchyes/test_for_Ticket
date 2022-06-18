@@ -1180,9 +1180,9 @@ namespace sjtu {
                 else l = mid + 1;
             }
             if (find_it) {
-                /*if (hs.count(now.value[i])) {
+                if (hs.count(now.value[i])) {
                     hs.erase(hs.find(now.value[i]));
-                }*/
+                }
                 value_type v_up = now_l.value[0];
                 for (int j = i; j < now_l.length - 1; j++)
                     now_l.value[j] = now_l.value[j + 1];
