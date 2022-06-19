@@ -992,6 +992,7 @@ namespace sjtu {
                 }
                 //tmp.leave_address = file_leaves.tellg();
                 root.son[0] = file_leaves.tellg();//!
+                tmp_l.pre=tmp_l.next=-1;//!
                 tmp_l.value[0] = value;
                 tmp_l.length = 1;
                 //tmp_l.address = tmp.leave_address;

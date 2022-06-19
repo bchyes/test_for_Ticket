@@ -390,7 +390,6 @@ TrainManagement::get_ticket2(const sjtu::string trainID_, const Stations &Lx, co
                                                Tk.find(trainID).query_ticket(date - L, Lx.pos, Rx.pos), mi));
 }
 
-//sjtu::linked_hashmap<size_t,train>T;
 void TrainManagement::query_transfer(const std::string &From, const std::string &To, const Date &date, bool flag) {
     
     if (sta.empty())return void(puts("0"));
@@ -400,12 +399,13 @@ void TrainManagement::query_transfer(const std::string &From, const std::string 
     bool First = 1;
     Cmp = flag == 0 ? Cmp1 : Cmp2;
     Transfer_Ticket ret, TMP;
+    sjtu::linked_hashmap<size_t,train>T;
 
 
     for(int i=0;i<(int)vec1.size();i++){
         const Stations &L=vec1[i].second;
-        //if(!T.count(vec1[i].first.second))T[vec1[i].first.second]=tra.find(vec1[i].first.second);
-        const train &now = tra.find(vec1[i].first.second);//T[vec1[i].first.second];
+        if(!T.count(vec1[i].first.second))T[vec1[i].first.second]=tra.find(vec1[i].first.second);
+        const train &now = T[vec1[i].first.second];
         const sjtu::string &trainID=now.trainID;
         sjtu::linked_hashmap<size_t,int>hv;
 
@@ -413,9 +413,9 @@ void TrainManagement::query_transfer(const std::string &From, const std::string 
         
         for(int j=0;j<(int)vec2.size();j++){
             if(vec1[i].first.second==vec2[j].first.second)continue;
-            //if(!T.count(vec2[j].first.second))T[vec2[j].first.second]=tra.find(vec2[j].first.second);
+            if(!T.count(vec2[j].first.second))T[vec2[j].first.second]=tra.find(vec2[j].first.second);
         
-            const train &to =tra.find(vec2[j].first.second);//T[vec2[j].first.second];
+            const train &to =T[vec2[j].first.second];
 
             for(int k=0,ed=vec2[j].second.pos;k<ed;k++){
                 size_t id=H(to.stations[k].change());
@@ -432,7 +432,6 @@ void TrainManagement::query_transfer(const std::string &From, const std::string 
 
         }
     }
-    //T.clear();
     //std::cerr<<T.Size()/1024.0/1024.0<<std::endl;
 
     if (First)puts("0");
