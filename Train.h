@@ -8,7 +8,6 @@
 #include "vector.hpp"
 #include "Ticket.h"
 #include "linked_hashmap.hpp"
-#include "stack.h"
 
 
 const int M = 105;
@@ -105,44 +104,19 @@ public:
     friend class TrainManagement;
 };
 
-struct Rollback_train{
-    int time;
-    train x;
-    Rollback_train(const int &a,const train &b):time(a),x(b){}
-    Rollback_train(){}
-};
-
-struct Rollback_Ticket{
-    int time,be,k;
-    size_t username;
-    Rollback_Ticket(const int &time_,const int &be_,const int &k_,const size_t &user):time(time_),be(be_),k(k_),username(user){}
-    Rollback_Ticket(){}
-};
-
-struct Rollback_Pend{
-    int time;
-    sjtu::pair<type1,int>fr;
-    Pendtype to;
-    Rollback_Pend(const int &time_,const sjtu::pair<type1,int> &fr_,const Pendtype &to_):time(time_),fr(fr_),to(to_){}
-    Rollback_Pend(){}
-};
-
 class TrainManagement {
 private:   
     sjtu::linked_hashmap<size_t, Basictrain > bas;
     sjtu::linked_hashmap<size_t, sjtu::string> trainid;
 
-    sjtu::bpt<size_t, train,254,5,1>tra;
-    sjtu::bpt<size_t, Left_Ticket,254,5,1> Tk;
-    sjtu::bpt<type3, Stations,169,72,1> sta;
-    sjtu::Stack<Rollback_train> stk_train;
+    sjtu::bpt<size_t, train,340,4,1>tra;
+    sjtu::bpt<size_t, Left_Ticket,340,4,1> Tk;
+    sjtu::bpt<type3, Stations,204,73,1> sta;
 
-    sjtu::bpt<type1, Ticket ,169,19,1> Get_ticket;//(username,kth) -> Ticket
-    sjtu::bpt<sjtu::pair<type1,int>, Pendtype,127,85,1> inqu_ticket;//((trainID,kth),timestamp) -> (username,Ticket)
-    sjtu::bpt<size_t, int,254,254,1> Num;//username -> tt
+    sjtu::bpt<type1, Ticket ,204,25,1> Get_ticket;//(username,kth) -> Ticket
+    sjtu::bpt<sjtu::pair<type1,int>, Pendtype,146,85,1> inqu_ticket;//((trainID,kth),timestamp) -> (username,Ticket)
+    sjtu::bpt<size_t, int,340,255,1> Num;//username -> tt
 
-    sjtu::Stack<Rollback_Ticket> stk_ticket;
-    sjtu::Stack<Rollback_Pend> stk_pend;
 public:
     TrainManagement();
 
@@ -152,11 +126,11 @@ public:
     add_train(const std::string &trainID_, const int &stationNum_, const sjtu::string *stations_, const int &seatNum,
               const int *prices_, const int *travelTimes_,
               const int *stopoverTimes_, const Date &startTime_, const Date &saleDateL_, const Date &saleDateR_,
-              const char &type_,const int &timestamp);//add_train command
+              const char &type_);//add_train command
 
     void release_train(const std::string &trainID, const int &timestamp);//release_train command
 
-    void delete_train(const std::string &trainID,const int &timestamp,const bool flag=1);//delete_train command
+    void delete_train(const std::string &trainID);//delete_train command
 
     void query_train(const std::string &trainID, const Date &date);//query_train command
 
@@ -185,15 +159,13 @@ public:
 
     void query_order(const size_t &username);
     
-    void refund_ticket(const size_t &username, const int &k,const int &timestamp);
+    void refund_ticket(const size_t &username, const int &k);
 
     void Print();
-
-    void Rollback(const int &time);
-
-    void add_train(const train &x);
-
-    bool Rollback2(const int &time,const int &ty);
+    
+    double Size(){
+        return (bas.Size()+trainid.size())/1024.0/1024.0+tra.Size()+Tk.Size()+sta.Size()+Get_ticket.Size()+inqu_ticket.Size()+Num.Size();
+    }
 };
 
 void TrainManagement::Print(){
@@ -217,10 +189,7 @@ TrainManagement::TrainManagement() : tra("file_train.dat","file_train2.dat", "fi
 
                                      Get_ticket("file_get_ticket.dat","file_get_ticket2.dat", "file_get_ticket_delete.dat","file_get_ticket2_delete.dat"),
                                      inqu_ticket("file_inqu_ticket.dat","file_inqu_ticket2.dat", "file_inqu_ticket_delete.dat","file_inqu_ticket2_delete.dat"),
-                                     Num("file_num.dat","file_num2.dat", "file_num_delete.dat","file_num2_delete.dat"),
-                                     stk_train("file_stk_train.dat"),
-                                     stk_ticket("file_stk_ticket.dat"),
-                                     stk_pend("file_stk_pend.dat"){
+                                     Num("file_num.dat","file_num2.dat", "file_num_delete.dat","file_num2_delete.dat"){
                                         if(tra.empty())return;
                                         const sjtu::vector<sjtu::pair<size_t,train> > &vec=tra.traverse_val(0,(size_t)-1);
                                         for(int i=0;i<(int)vec.size();i++){
@@ -232,49 +201,27 @@ TrainManagement::TrainManagement() : tra("file_train.dat","file_train2.dat", "fi
 
 TrainManagement::~TrainManagement() {}
 
-void TrainManagement::add_train(const train &x){
-    size_t trainID = H(x.trainID.change());
-    bas[trainID]=Basictrain(x.saleDateR-x.saleDateL,x.seatNum);
-    trainid[trainID]=x.trainID;
-    tra.insert(trainID,x);
-    Tk.insert(trainID,Left_Ticket(x.saleDateR-x.saleDateL,x.stationNum,x.seatNum));
-}
-
 void TrainManagement::add_train(const std::string &trainID_, const int &stationNum_, const sjtu::string *stations_,
                                 const int &seatNum, const int *prices_, const int *travelTimes_,
                                 const int *stopoverTimes_, const Date &startTime_, const Date &saleDateL_,
-                                const Date &saleDateR_, const char &type_,const int &timestamp) {
+                                const Date &saleDateR_, const char &type_) {
     size_t trainID = H(trainID_);
     if(bas.count(trainID))return void(puts("-1"));
     bas[trainID]=Basictrain(saleDateR_-saleDateL_,seatNum);
     trainid[trainID]=sjtu::string(trainID_);
-    const train &ins=train(sjtu::string(trainID_),stationNum_,stations_,seatNum,prices_,travelTimes_,stopoverTimes_,startTime_,saleDateL_,saleDateR_,type_);
-    tra.insert(trainID,ins);
+    tra.insert(trainID,train(sjtu::string(trainID_),stationNum_,stations_,seatNum,prices_,travelTimes_,stopoverTimes_,startTime_,saleDateL_,saleDateR_,type_));
     Tk.insert(trainID,Left_Ticket(saleDateR_-saleDateL_,stationNum_,seatNum));
     puts("0");
-    stk_train.push(Rollback_train(timestamp*3,ins));
 }
 
-void TrainManagement::delete_train(const std::string &trainID_,const int &timestamp,const bool flag) {
+void TrainManagement::delete_train(const std::string &trainID_) {
     size_t trainID = H(trainID_);
-    if(!bas.count(trainID)||bas[trainID].rel==1){
-        if(flag)puts("-1");
-        return;
-    }
-    if(flag){
-        puts("0");
-        stk_train.push(Rollback_train(timestamp*3+2,tra.find(trainID)));
-    }
-    // if(timestamp==0){
-    //     std::cerr<<bas[trainID].rel<<' '<<trainID_<<'\n';
-    // }
+    if(!bas.count(trainID)||bas[trainID].rel==1)return void(puts("-1"));
     tra.erase(trainID);
     bas.erase(bas.find(trainID));
     trainid.erase(trainid.find(trainID));
     Tk.erase(trainID);
-    // if(timestamp==0){
-    //     std::cerr<<trainID_<<' '<<bas.count(trainID)<<'\n';
-    // }
+    puts("0");
 }
 
 void TrainManagement::release_train(const std::string &trainID_, const int &timestamp) {
@@ -287,14 +234,12 @@ void TrainManagement::release_train(const std::string &trainID_, const int &time
     x.rel=1;
     tra.modify(trainID,x);
     bas[trainID].rel=1;
-    stk_train.push(Rollback_train(timestamp*3+1,x));
 }
 
 void TrainManagement::query_train(const std::string &trainID_,const Date &date){
 	size_t trainID=H(trainID_);
     if(!bas.count(trainID))return void(puts("-1"));
 	const train &x=tra.find(trainID);
-    //std::cerr<<"OK"<<std::endl;
 	if(x.saleDateR<date||date<x.saleDateL)return void(puts("-1"));
     std::cout<<trainID_;
     printf(" %c\n",x.Type);
@@ -330,7 +275,7 @@ inline Ticket2 TrainManagement::get_ticket(const sjtu::string &trainID_,const St
     size_t trainID=H(trainID_.change());
     int k=date-L.lef;
     if(k<0||k>bas[trainID].maxday)return Ticket2();
-    return Ticket2(trainID_,L.lef+k*1440,R.ari+k*1440,R.pri-L.pri,Tk.find(trainID).query_ticket(k,L.pos,R.pos),R.ari.get_time(L.lef));
+    return Ticket2(trainID_,L.lef.ad_day(k),R.ari.ad_day(k),R.pri-L.pri,Tk.find(trainID).query_ticket(k,L.pos,R.pos),R.ari.get_time(L.lef));
 }
 
 void TrainManagement::Update_ticket(const size_t &trainID,const int &k,const int &l,const int &r,const int &num){
@@ -342,11 +287,10 @@ void TrainManagement::Update_ticket(const size_t &trainID,const int &k,const int
 void TrainManagement::buy_ticket(const std::string &username,const std::string &trainID_, const Date &date, const std::string From_,
                                  const std::string To_,const int &ask,const bool &flag,const int &timestamp) {
     size_t trainID = H(trainID_),From=H(From_),To=H(To_);
-    if(!bas.count(trainID)||bas[trainID].maxseat<ask||bas[trainID].rel==0)return void(puts("-1"));
+    if(!bas.count(trainID)||bas[trainID].maxseat<ask)return void(puts("-1"));
     auto L=sta.find2(type3(From,trainID)),R=sta.find2(type3(To,trainID));
     if(L.first==0||R.first==0||L.second.pos>R.second.pos)return void(puts("-1"));
     Ticket2 tk=get_ticket(sjtu::string(trainID_),L.second,R.second,date);
-    //std::cerr<<"OK"<<std::endl;
     if(tk.cost==-1)return void(puts("-1"));//时间超
     if(flag==0&&tk.num<ask)return void(puts("-1"));//不候补
     int k=date-L.second.lef;
@@ -358,7 +302,6 @@ void TrainManagement::buy_ticket(const std::string &username,const std::string &
     }else{
         tk.num=ask;
         int id=insert_ticket(H(username),timestamp,Ticket(tk,From_,To_,-timestamp));
-        stk_pend.push(Rollback_Pend(timestamp<<1,sjtu::pair<type1,int>(type1(trainID,k),timestamp),Pendtype(H(username),ask,L.second.pos,R.second.pos,id)));
         inqu_ticket.insert(sjtu::pair<type1,int>(type1(trainID,k),timestamp),Pendtype(H(username),ask,L.second.pos,R.second.pos,id) );
         puts("queue");
     }
@@ -373,8 +316,8 @@ void TrainManagement::Update_ticket(const Ticket &t) {
     Tk.modify(trainID, now);
 }
 
+Ticket2 A[M*M],tmp[M*M];
 int ticket_num;
-Ticket2 A[M * M];
 
 bool (*cmp)(const Ticket2 &a, const Ticket2 &b);
 
@@ -382,23 +325,23 @@ bool (*Cmp)(const Transfer_Ticket &a, const Transfer_Ticket &b);
 
 void sort(int l, int r) {
     if (l >= r)return;
-    Ticket2 key = A[l];
-    int i = l, j = r;
-    while (i < j) {
-        while (i < j && !cmp(A[j], key))j--;
-        while (i < j && cmp(A[i], key))i++;
-        if (i < j)std::swap(A[i], A[j]);
-    }
-    sort(l, i);
-    sort(i + 1, r);
+    int mid=l+r>>1;
+    sort(l,mid),sort(mid+1,r);
+    int i=l,j=mid+1,k=l;
+    while(i<=mid&&j<=r)
+        if(cmp(A[i],A[j]))tmp[k++]=A[i++];
+        else tmp[k++]=A[j++];
+    while(i<=mid)tmp[k++]=A[i++];
+    while(j<=r)tmp[k++]=A[j++];
+    for(i=l;i<=r;i++)A[i]=tmp[i];
 }
 
 void TrainManagement::query_ticket(const std::string &From, const std::string &To, const Date &date, bool flag) {
     if (sta.empty())return void(puts("0"));
-    ticket_num = 0;
     const sjtu::vector<sjtu::pair<type3,Stations> > &vec1=sta.traverse_val(type3(H(From),0),type3(H(From),(size_t)-1));
     const sjtu::vector<sjtu::pair<type3,Stations> > &vec2=sta.traverse_val(type3(H(To),0),type3(H(To),(size_t)-1));
     if(vec1.size()==0||vec2.size()==0)return void(puts("0"));
+    ticket_num=0;
     for(int i=0,j=0,sz=vec2.size();i<(int)vec1.size();i++){
         while(j+1<sz&&vec2[j].first.second<vec1[i].first.second)j++;
         if(vec2[j].first.second==vec1[i].first.second){
@@ -423,7 +366,7 @@ TrainManagement::get_ticket2(const sjtu::string trainID_, const Stations &Lx, co
     size_t trainID = H(trainID_.change());
     if(Lx.pos>Rx.pos)return sjtu::pair<int, Ticket2>(-1, Ticket2());
     Date date(date_);
-    Date L = Lx.lef, R = Lx.lef+bas[trainID].maxday*1440;
+    Date L = Lx.lef, R = Lx.lef.ad_day(bas[trainID].maxday);
 
     if (R < date)return sjtu::pair<int, Ticket2>(-1, Ticket2());
     int Ret = 0;
@@ -447,23 +390,22 @@ TrainManagement::get_ticket2(const sjtu::string trainID_, const Stations &Lx, co
                                                Tk.find(trainID).query_ticket(date - L, Lx.pos, Rx.pos), mi));
 }
 
+//sjtu::linked_hashmap<size_t,train>T;
 void TrainManagement::query_transfer(const std::string &From, const std::string &To, const Date &date, bool flag) {
     
     if (sta.empty())return void(puts("0"));
-    ticket_num = 0;
-    const sjtu::vector<sjtu::pair<type3,Stations> > &vec1=sta.traverse_val(type3(H(From),0),type3(H(From),(size_t)-1));
-    const sjtu::vector<sjtu::pair<type3,Stations> > &vec2=sta.traverse_val(type3(H(To),0),type3(H(To),(size_t)-1));
+    sjtu::vector<sjtu::pair<type3,Stations> > vec1=sta.traverse_val(type3(H(From),0),type3(H(From),(size_t)-1));
+    sjtu::vector<sjtu::pair<type3,Stations> > vec2=sta.traverse_val(type3(H(To),0),type3(H(To),(size_t)-1));
 
     bool First = 1;
     Cmp = flag == 0 ? Cmp1 : Cmp2;
     Transfer_Ticket ret, TMP;
 
-    sjtu::linked_hashmap<size_t,train>T;
 
     for(int i=0;i<(int)vec1.size();i++){
         const Stations &L=vec1[i].second;
-        if(!T.count(vec1[i].first.second))T[vec1[i].first.second]=tra.find(vec1[i].first.second);
-        const train &now = T[vec1[i].first.second];
+        //if(!T.count(vec1[i].first.second))T[vec1[i].first.second]=tra.find(vec1[i].first.second);
+        const train &now = tra.find(vec1[i].first.second);//T[vec1[i].first.second];
         const sjtu::string &trainID=now.trainID;
         sjtu::linked_hashmap<size_t,int>hv;
 
@@ -471,18 +413,16 @@ void TrainManagement::query_transfer(const std::string &From, const std::string 
         
         for(int j=0;j<(int)vec2.size();j++){
             if(vec1[i].first.second==vec2[j].first.second)continue;
-            if(!T.count(vec2[j].first.second))T[vec2[j].first.second]=tra.find(vec2[j].first.second);
+            //if(!T.count(vec2[j].first.second))T[vec2[j].first.second]=tra.find(vec2[j].first.second);
         
-            const Stations &R=vec2[j].second;
-            const train &to =T[vec2[j].first.second];
-            const sjtu::string &trainID2=to.trainID;
+            const train &to =tra.find(vec2[j].first.second);//T[vec2[j].first.second];
 
-            for(int k=0;k<R.pos;k++){
+            for(int k=0,ed=vec2[j].second.pos;k<ed;k++){
                 size_t id=H(to.stations[k].change());
                 if(!hv.count(id))continue;
                 const Ticket2 &A=get_ticket(trainID,L,now.get_station(hv[id]),date);
                 if(A.cost==-1)continue;
-                const sjtu::pair<int,Ticket2> &B=get_ticket2(trainID2,to.get_station(k),R,A.TimeR);
+                const sjtu::pair<int,Ticket2> &B=get_ticket2(to.trainID,to.get_station(k),vec2[j].second,A.TimeR);
                 if(B.first!=-1){
                     TMP=Transfer_Ticket(A,B.second,B.first,From,to.stations[k].change(),To);
                     if(First)ret=TMP,First=0;
@@ -492,6 +432,8 @@ void TrainManagement::query_transfer(const std::string &From, const std::string 
 
         }
     }
+    //T.clear();
+    //std::cerr<<T.Size()/1024.0/1024.0<<std::endl;
 
     if (First)puts("0");
     else {
@@ -518,18 +460,8 @@ int TrainManagement::insert_ticket(const size_t &username, const int &timestamp,
         now=Num.find2(username);
     }
     int tt = now.second;
-    /*
-    if(username==H("Sussurro")){
-        std::cerr<<t.From<<' '<<t.To<<std::endl;
-        for(int i=1;i<=5;i++)
-            std::cerr<<Get_ticket.count(type1(username,i))<<' ';
-        std::cerr<<std::endl;
-        std::cerr<<tt<<std::endl;
-    }
-    */
     Get_ticket.insert(sjtu::pair<type1, Ticket>(type1(username, ++tt), t));
     Num.modify(username, tt);
-    stk_ticket.push(Rollback_Ticket(timestamp<<1,timestamp,tt,username));
     return tt;
 }
 
@@ -545,7 +477,7 @@ void TrainManagement::query_order(const size_t &username) {
     }
 }
 
-void TrainManagement::refund_ticket(const size_t &username, const int &k,const int &timestamp) {
+void TrainManagement::refund_ticket(const size_t &username, const int &k) {
     if (Num.empty() )return void(puts("-1"));
     auto tmp = Num.find2(username);
     if(tmp.first==0||k>tmp.second)return void(puts("-1"));
@@ -555,14 +487,10 @@ void TrainManagement::refund_ticket(const size_t &username, const int &k,const i
     size_t trainID=H(t.trainID.change());
     auto Sta=sta.find(type3(H(t.From.change()),trainID));
     if(t.time<0){
-        const sjtu::pair<type1,int> &TMP=sjtu::pair<type1,int>(type1(trainID,t.TimeL-Sta.lef),-t.time);
-        stk_pend.push(Rollback_Pend(timestamp<<1|1,TMP,inqu_ticket.find(TMP)));
-        inqu_ticket.erase( TMP );
-        stk_ticket.push(Rollback_Ticket(timestamp<<1|1,t.time,tt-k+1,username));
+        inqu_ticket.erase( sjtu::pair<type1,int>(type1(trainID,t.TimeL-Sta.lef),-t.time) );
         t.time=0;
         Get_ticket.modify(type1(username, tt - k + 1), t);
     }else{
-        stk_ticket.push(Rollback_Ticket(timestamp<<1|1,t.time,tt-k+1,username));
         t.time=0;
         Get_ticket.modify(type1(username, tt - k + 1), t);
         t.num=-t.num,Update_ticket(t);
@@ -576,11 +504,8 @@ void TrainManagement::refund_ticket(const size_t &username, const int &k,const i
                 if(tk.query_ticket(K,x.l,x.r)>=x.num){
                     tk.Update_ticket(K,x.l,x.r,x.num); 
                     auto us=Get_ticket.find(type1(x.username,x.kth));
-                    stk_ticket.push(Rollback_Ticket(timestamp<<1|1,us.time,x.kth,x.username));
                     us.time=-us.time;
                     Get_ticket.modify(type1(x.username,x.kth),us);
-
-                    stk_pend.push(Rollback_Pend(timestamp<<1|1,vec[i].first,inqu_ticket.find(vec[i].first)));
                     inqu_ticket.erase(vec[i].first);
                 }
             }
@@ -588,79 +513,4 @@ void TrainManagement::refund_ticket(const size_t &username, const int &k,const i
         }
     }
     puts("0");
-}
-
-bool TrainManagement::Rollback2(const int &time,const int &ty){
-    if(ty==0){
-        const Rollback_train &now=stk_train.top();
-        if(now.time/3<time)return 0;
-        stk_train.pop();
-        if(now.time%3==0)delete_train(now.x.trainID.change(),0,0);
-        else if(now.time%3==1){
-            train x=now.x;
-            size_t trainID = H(x.trainID.change());
-            for(int i=0;i<x.stationNum;i++)
-                sta.erase(type3(H(x.stations[i].change()),trainID));
-            x.rel=0;
-            tra.modify(trainID,x);
-            bas[trainID].rel=0;
-        }else add_train(now.x);
-    }else{
-        const Rollback_Ticket &now=stk_ticket.top();
-        if((now.time>>1)<time)return 0;
-        stk_ticket.pop();
-        if(now.time+1&1){
-            int tt=Num.find(now.username);
-            Ticket x=Get_ticket.find(type1(now.username,tt));
-            if(x.time>0){
-                x.num=-x.num;
-                Update_ticket(x);
-            }
-            // std::cerr<<Get_ticket.count(type1(now.username,tt))<<"##"<<std::endl;
-            Get_ticket.erase(type1(now.username,tt));
-            // std::cerr<<Get_ticket.count(type1(now.username,tt))<<"###"<<std::endl;
-            tt--;
-            Num.modify(now.username,tt);
-        }else{
-            int last_type=now.be,k=now.k;
-            const type1 &fi=type1(now.username,k);
-            Ticket x=Get_ticket.find(fi);
-            if(x.time>0){
-                x.time=-x.time;
-                Get_ticket.modify(fi,x);
-                x.num=-x.num;
-                Update_ticket(x);
-            }else {
-                x.time=last_type;
-                Get_ticket.modify(fi,x);
-                if(last_type>0)Update_ticket(x);
-            }
-        }
-    }
-    return 1;
-}
-
-void TrainManagement::Rollback(const int &time){
-    //0 add_train 1 release_trian 2 delete_train
-    while(!stk_train.empty()&&!stk_ticket.empty()){
-        const int &l=stk_train.top().time/3;
-        const int &r=stk_ticket.top().time/2;
-        bool fl=0;
-        if(l<r)fl=Rollback2(time,1);
-        else fl=Rollback2(time,0);
-        if(!fl)break;
-    }
-    while(!stk_train.empty()&&Rollback2(time,0));
-    while(!stk_ticket.empty()&&Rollback2(time,1));
-
-    while(!stk_pend.empty()){
-        const Rollback_Pend &now=stk_pend.top();
-        if((now.time>>1)<time)break;
-        stk_pend.pop();
-        if(now.time+1&1){//0 delete
-            inqu_ticket.erase(now.fr);
-        }else{//1 insert
-            inqu_ticket.insert(now.fr,now.to);
-        }
-    }
 }
