@@ -26,7 +26,7 @@ struct User{
 
 class User_Management{
 private:
-	sjtu::bpt<size_t,User,200,34,1> pos;//UserID���û���ӳ��
+	sjtu::bpt<size_t,User,200,150,1> pos;//UserID���û���ӳ��
 	sjtu::linked_hashmap<size_t,bool>log;
 public:
 	User_Management();

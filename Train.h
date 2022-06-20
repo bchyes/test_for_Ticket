@@ -114,11 +114,11 @@ private:
     sjtu::linked_hashmap<size_t, Basictrain> bas;
     sjtu::linked_hashmap<size_t, sjtu::string> trainid;
 
-    sjtu::bpt<size_t, train, 200, 4, 2> tra;
-    sjtu::bpt<sjtu::pair<size_t, int>, Left_Ticket, 150, 9, 6> Tk;
-    sjtu::bpt<type3, Stations, 150, 73, 6> sta;
+    sjtu::bpt<size_t, train, 200,5, 2> tra;
+    sjtu::bpt<sjtu::pair<size_t, int>, Left_Ticket, 150, 50, 6> Tk;
+    sjtu::bpt<type3, Stations, 150, 100, 6> sta;
 
-    sjtu::bpt<type1, Ticket, 150, 25, 2> Get_ticket;//(username,kth) -> Ticket
+    sjtu::bpt<type1, Ticket, 150, 50, 2> Get_ticket;//(username,kth) -> Ticket
     sjtu::bpt<sjtu::pair<type1, int>, Pendtype, 100, 85, 2> inqu_ticket;//((trainID,kth),timestamp) -> (username,Ticket)
     sjtu::bpt<size_t, int, 200, 150, 1> Num;//username -> tt
 
