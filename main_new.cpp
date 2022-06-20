@@ -106,7 +106,6 @@ void Process(){//��ȡָ�ִ��
     while(1){
         bool flag=0,rd=str.read();
         timestamp=get_number(str.next_token());
-        if (timestamp==7530) break;
         printf("[%d] ",timestamp);
         for(int i='a';i<'z';i++)Str[i]="";
         Command cmd=find_Command(str.next_token());
@@ -148,92 +147,15 @@ void Process(){//��ȡָ�ִ��
         }
         if(!rd)break;
     }
-        printf("[%d] ",timestamp);
-        for(int i='a';i<'z';i++)Str[i]="";
-        Command cmd=find_Command(str.next_token());
-        std::string s=str.next_token(),c;
-        while(s.size()>0){
-            c=str.next_token();
-            p[(int)s[1]]=c;
-            s=str.next_token();
-        }
-//		CT++;
-//		if(CT%1000==0){
-//			std::cerr<<train.Size()+user.Size()<<std::endl;
-//		}
-        switch(cmd){
-            case add_user: user.add_user(p['c'],p['u'],p['p'],p['n'],p['m'],get_number(p['g']));break;
-            case login: user.login(p['u'],p['p']);break;
-            case logout: user.logout(p['u']);break;
-            case query_profile: user.query_profile(p['c'],p['u']);break;
-            case modify_profile: user.modify_profile(p['c'],p['u'],p['p'],p['n'],p['m'],get_number(p['g']));break;
 
-            case add_train: Add_train();break;
-            case delete_train: train.delete_train(p['i']);break;
-            case release_train: train.release_train(p['i'],timestamp);break;
-            case query_train: train.query_train(p['i'],p['d']);break;
-            case query_ticket: train.query_ticket(p['s'],p['t'],p['d'],p['p'].size()>0&&p['p'][0]=='c');break;
-            case query_transfer: train.query_transfer(p['s'],p['t'],p['d'],p['p'].size()>0&&p['p'][0]=='c');break;
-
-            case buy_ticket: Buy_ticket(p['u'],p['i'],p['d'],get_number(p['n']),p['f'],p['t'],p['q']);break;
-            case refund_ticket: Refund_ticket(p['u'],p['n']);break;
-            case query_order: Query_order(p['u']);break;
-
-            case rollback: break;
-            case clean: Reset();break;
-        }
-    while(1){
-        bool flag=0,rd=str.read();
-        timestamp=get_number(str.next_token());
-        printf("[%d] ",timestamp);
-        for(int i='a';i<'z';i++)Str[i]="";
-        Command cmd=find_Command(str.next_token());
-        std::string s=str.next_token(),c;
-        while(s.size()>0){
-            c=str.next_token();
-            p[(int)s[1]]=c;
-            s=str.next_token();
-        }
-//		CT++;
-//		if(CT%1000==0){
-//			std::cerr<<train.Size()+user.Size()<<std::endl;
-//		}
-        switch(cmd){
-            case add_user: user.add_user(p['c'],p['u'],p['p'],p['n'],p['m'],get_number(p['g']));break;
-            case login: user.login(p['u'],p['p']);break;
-            case logout: user.logout(p['u']);break;
-            case query_profile: user.query_profile(p['c'],p['u']);break;
-            case modify_profile: user.modify_profile(p['c'],p['u'],p['p'],p['n'],p['m'],get_number(p['g']));break;
-
-            case add_train: Add_train();break;
-            case delete_train: train.delete_train(p['i']);break;
-            case release_train: train.release_train(p['i'],timestamp);break;
-            case query_train: train.query_train(p['i'],p['d']);break;
-            case query_ticket: train.query_ticket(p['s'],p['t'],p['d'],p['p'].size()>0&&p['p'][0]=='c');break;
-            case query_transfer: train.query_transfer(p['s'],p['t'],p['d'],p['p'].size()>0&&p['p'][0]=='c');break;
-
-            case buy_ticket: Buy_ticket(p['u'],p['i'],p['d'],get_number(p['n']),p['f'],p['t'],p['q']);break;
-            case refund_ticket: Refund_ticket(p['u'],p['n']);break;
-            case query_order: Query_order(p['u']);break;
-
-            case rollback: break;
-            case clean: Reset();break;
-            case exit_: flag=1;break;
-        }
-        if(flag){
-            puts("bye");
-            break;
-        }
-        if(!rd)break;
-    }
 }
 
 int main(){
     //user.Print();
     //puts("----------");
     //train.Print();
-    freopen("1.in","r",stdin);
-    freopen("1.ans","w",stdout);
+   // freopen("1.in","r",stdin);
+    //freopen("1.ans","w",stdout);
     Process();
     return 0;
 }
