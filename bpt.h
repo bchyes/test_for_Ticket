@@ -525,10 +525,12 @@ namespace sjtu {
                                         } else {
                                             for (int u = 0; u <= tmp_.length - 1; u++) {
                                                 file_leaves.seekg(now.son[u + now.length - tmp_.length]);
-                                                file_leaves.read(reinterpret_cast<char *>(&tmp_0_l), sizeof(node_leaves));
+                                                file_leaves.read(reinterpret_cast<char *>(&tmp_0_l),
+                                                                 sizeof(node_leaves));
                                                 tmp_0_l.father = now.address;
                                                 file_leaves.seekp(now.son[u + now.length - tmp_.length]);
-                                                file_leaves.write(reinterpret_cast<char *>(&tmp_0_l), sizeof(node_leaves));
+                                                file_leaves.write(reinterpret_cast<char *>(&tmp_0_l),
+                                                                  sizeof(node_leaves));
                                             }
                                         }//!
                                         for (int u = l; u < tmp.length - 2; u++) {
@@ -596,10 +598,12 @@ namespace sjtu {
                                         } else {
                                             for (int u = 0; u <= now.length - 1; u++) {
                                                 file_leaves.seekg(tmp_.son[u + tmp_.length - now.length]);
-                                                file_leaves.read(reinterpret_cast<char *>(&tmp_0_l), sizeof(node_leaves));
+                                                file_leaves.read(reinterpret_cast<char *>(&tmp_0_l),
+                                                                 sizeof(node_leaves));
                                                 tmp_0_l.father = tmp_.address;
                                                 file_leaves.seekp(tmp_.son[u + tmp_.length - now.length]);
-                                                file_leaves.write(reinterpret_cast<char *>(&tmp_0_l), sizeof(node_leaves));
+                                                file_leaves.write(reinterpret_cast<char *>(&tmp_0_l),
+                                                                  sizeof(node_leaves));
                                             }
                                         }//!
                                         tmp.length--;
@@ -628,17 +632,28 @@ namespace sjtu {
                                 delete_.push_back(now.address);
                                 now.address = 0;
                                 now.father = -1;
-                                now.is_leave = 0;//!
+                                //now.is_leave = 0;//!
                                 file.seekp(0);
                                 file.write(reinterpret_cast<char *>(&now), sizeof(node));
-                                for (int i = 0; i < now.length; i++) {
-                                    //node tmp_0;
-                                    file.seekg(now.son[i]);
-                                    file.read(reinterpret_cast<char *>(&tmp_0), sizeof(node));
-                                    tmp_0.father = 0;
-                                    file.seekp(now.son[i]);
-                                    file.write(reinterpret_cast<char *>(&tmp_0), sizeof(node));
+                                if (!now.is_leave) {
+                                    for (int i = 0; i < now.length; i++) {
+                                        //node tmp_0;
+                                        file.seekg(now.son[i]);
+                                        file.read(reinterpret_cast<char *>(&tmp_0), sizeof(node));
+                                        tmp_0.father = 0;
+                                        file.seekp(now.son[i]);
+                                        file.write(reinterpret_cast<char *>(&tmp_0), sizeof(node));
+                                    }
+                                } else {
+                                    for (int i = 0; i < now.length; i++) {
+                                        file_leaves.seekg(now.son[i]);
+                                        file_leaves.read(reinterpret_cast<char *>(&tmp_0_l), sizeof(node_leaves));
+                                        tmp_0_l.father = 0;
+                                        file_leaves.seekp(now.son[i]);
+                                        file_leaves.write(reinterpret_cast<char *>(&tmp_0_l), sizeof(node_leaves));
+                                    }
                                 }
+
                             }
                         }
                         //file.close();
@@ -866,12 +881,22 @@ namespace sjtu {
                         //now.is_leave = 1;//!!!!!!!!!!!!
                         file.seekp(0);
                         file.write(reinterpret_cast<char *>(&now), sizeof(node));
-                        for (int i = 0; i < now.length; i++) {
-                            file_leaves.seekg(now.son[i]);
-                            file_leaves.read(reinterpret_cast<char *>(&tmp_0_l), sizeof(node_leaves));
-                            tmp_0_l.father = 0;
-                            file_leaves.seekp(now.son[i]);
-                            file_leaves.write(reinterpret_cast<char *>(&tmp_0_l), sizeof(node_leaves));
+                        if (now.is_leave) {
+                            for (int i = 0; i < now.length; i++) {
+                                file_leaves.seekg(now.son[i]);
+                                file_leaves.read(reinterpret_cast<char *>(&tmp_0_l), sizeof(node_leaves));
+                                tmp_0_l.father = 0;
+                                file_leaves.seekp(now.son[i]);
+                                file_leaves.write(reinterpret_cast<char *>(&tmp_0_l), sizeof(node_leaves));
+                            }
+                        } else {
+                            for (int i = 0; i < now.length; i++) {
+                                file.seekg(now.son[i]);
+                                file.read(reinterpret_cast<char *>(&tmp_0), sizeof(node));
+                                tmp_0.father = 0;
+                                file.seekp(now.son[i]);
+                                file_leaves.write(reinterpret_cast<char *>(&tmp_0), sizeof(node));
+                            }
                         }
                     }
                 }
@@ -992,7 +1017,7 @@ namespace sjtu {
                 }
                 //tmp.leave_address = file_leaves.tellg();
                 root.son[0] = file_leaves.tellg();//!
-                tmp_l.pre=tmp_l.next=-1;//!
+                tmp_l.pre = tmp_l.next = -1;//!
                 tmp_l.value[0] = value;
                 tmp_l.length = 1;
                 //tmp_l.address = tmp.leave_address;
@@ -1087,7 +1112,7 @@ namespace sjtu {
             file_leaves.read(reinterpret_cast<char *>(&now_l), sizeof(node_leaves));
             for (int i = 0; i < now_l.length; i++)
                 if (!cpy(key, now_l.value[i].first) && !cpy(now_l.value[i].first, key)) {
-                    while (hs.Size() >=  mm) {
+                    while (hs.Size() >= mm) {
                         hs.erase(hs.begin());
                     }
                     //!
@@ -1128,7 +1153,7 @@ namespace sjtu {
             file_leaves.read(reinterpret_cast<char *>(&now_l), sizeof(node_leaves));
             for (int i = 0; i < now_l.length; i++)
                 if (!cpy(key, now_l.value[i].first) && !cpy(now_l.value[i].first, key)) {
-                    while (hs.Size() >=  mm) {
+                    while (hs.Size() >= mm) {
                         hs.erase(hs.begin());
                     }
                     //!
@@ -1268,7 +1293,7 @@ namespace sjtu {
                 }
                 //!
                 //!
-                while (hs.Size() >=  mm) {
+                while (hs.Size() >= mm) {
                     hs.erase(hs.begin());
                 }
                 now_l.value[i].second = v;
@@ -1379,7 +1404,7 @@ namespace sjtu {
             }
         }
 
-        double Size(){
+        double Size() {
             return hs.Size();
         }
 

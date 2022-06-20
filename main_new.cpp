@@ -107,6 +107,7 @@ void Process(){//��ȡָ�ִ��
         bool flag=0,rd=str.read();
         timestamp=get_number(str.next_token());
         printf("[%d] ",timestamp);
+        if (timestamp==30884) break;
         for(int i='a';i<'z';i++)Str[i]="";
         Command cmd=find_Command(str.next_token());
         std::string s=str.next_token(),c;
@@ -154,6 +155,8 @@ int main(){
     //user.Print();
     //puts("----------");
     //train.Print();
+    //freopen("2.in","r",stdin);
+    //freopen("2.ans","w",stdout);
     Process();
     return 0;
 }
