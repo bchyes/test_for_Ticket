@@ -43,7 +43,6 @@ namespace sjtu {
             int father = -1;
             Key value[M];
             int son[M];
-            int leave_address = -1;
         };
         struct node_leaves {
             int length = 0;
@@ -51,7 +50,6 @@ namespace sjtu {
             int pre = -1;
             int next = -1;
             int address = -1;
-            int key_address = -1;
             int father;
         };
         node root;
