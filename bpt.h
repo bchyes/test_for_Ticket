@@ -105,6 +105,7 @@ namespace sjtu {
                 delete_leaves_num--;
                 file_leaves.seekg(x);
             }*/
+            file_leaves.seekp(0, std::fstream::end);
             new_tmp_l = ept_l;//置空
             //new_tmp.leave_address = file_leaves.tellp();
             //new_tmp_l.address = new_tmp.leave_address;
@@ -179,6 +180,7 @@ namespace sjtu {
                         delete_num--;
                         file.seekg(x);
                     }*/
+                    file.seekp(0, std::fstream::end);
                     new_tmp.address = file.tellg();//新取一个地址 可记录
                     new_tmp.father = node_back.father;
                     //new_tmp.is_leave = 0;
@@ -244,6 +246,7 @@ namespace sjtu {
                         delete_num--;
                         file.seekg(x);
                     }*/
+                    file.seekp(0, std::fstream::end);
                     new_tmp.address = file.tellg();//新取一个地址 可记录
                     new_tmp.father = 0;
                     //new_tmp.is_leave = 0;
@@ -275,6 +278,7 @@ namespace sjtu {
                         delete_num--;
                         file.seekg(x);
                     }*/
+                    file.seekp(0, std::fstream::end);
                     node_back.address = file.tellg();//新取一个地址 可记录
                     node_back.father = 0;
                     node_back.is_leave = new_tmp.is_leave;//!?
@@ -1014,6 +1018,7 @@ namespace sjtu {
                     file_leaves.seekg(x);
                 }*/
                 //tmp.leave_address = file_leaves.tellg();
+                file_leaves.seekg(0, std::ios::end);
                 root.son[0] = file_leaves.tellg();//!
                 tmp_l.pre = tmp_l.next = -1;//!
                 tmp_l.value[0] = value;
