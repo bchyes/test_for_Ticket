@@ -420,10 +420,10 @@ namespace sjtu {
                         /*delete_num++;
                         delete_.push_back(now.address);*/
                         /*delete_leaves_num++;
-                        delete_leaves.push_back(now_l.address);
+                        delete_leaves.push_back(now_l.address);*/
                         for (int k = 0; k < now_l.length; k++) {
                             tmp_l.value[k + tmp_l.length] = now_l.value[k];
-                        }*/
+                        }
                         tmp_l.length += now_l.length;
                         tmp_l.next = now_l.next;
                         file_leaves.seekp(tmp_l.address);
