@@ -12,7 +12,6 @@ class User_Management;
 
 
 struct User{
-    char username[22];
     char password[32];
     char name[22];
     char mailAddr[32];
@@ -63,7 +62,6 @@ void User_Management::Print(){
 }
 
 User::User(){
-	username[0]='\0';
 	password[0]='\0';
 	name[0]='\0';
 	mailAddr[0]='\0';
@@ -71,7 +69,6 @@ User::User(){
 }
 
 User::User(const std::string &username_,const std::string &password_,const std::string &name_,const std::string &mailAddr_,const int &privilege_){
-	strcpy(username,username_.c_str());
 	strcpy(password,password_.c_str());
 	strcpy(name,name_.c_str());
 	strcpy(mailAddr,mailAddr_.c_str());
@@ -125,7 +122,7 @@ void User_Management::query_profile(const std::string &cur_username_,const std::
 	if(tmp.first==0)return void(puts("-1"));
 	const User &Ask=tmp.second;
 	if((username_!=cur_username_&&Cur.privilege<=Ask.privilege))return void(puts("-1"));
-	std::cout<<Ask.username<<' '<<Ask.name<<' '<<Ask.mailAddr<<' '<<Ask.privilege<<std::endl;
+	std::cout<<username_<<' '<<Ask.name<<' '<<Ask.mailAddr<<' '<<Ask.privilege<<std::endl;
 }
 
 void User_Management::modify_profile(const std::string &cur_username_,const std::string &username_,const std::string &pwd,const std::string &name,const std::string &mailAddr,const int &privilege){
@@ -141,7 +138,7 @@ void User_Management::modify_profile(const std::string &cur_username_,const std:
 	if(mailAddr.size()>0)strcpy(Ask.mailAddr,mailAddr.c_str());
 	if(privilege!=-1)Ask.privilege=privilege;
 	pos.modify(username,Ask);
-	std::cout<<Ask.username<<' '<<Ask.name<<' '<<Ask.mailAddr<<' '<<Ask.privilege<<std::endl;
+	std::cout<<username_<<' '<<Ask.name<<' '<<Ask.mailAddr<<' '<<Ask.privilege<<std::endl;
 }
 
 bool User_Management::Ask_Login(const std::string &username_){

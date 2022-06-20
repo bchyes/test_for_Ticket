@@ -10,7 +10,7 @@
 #include "linked_hashmap.hpp"
 
 
-const int M = 105;
+const int M = 101;
 typedef sjtu::pair<size_t, size_t> type3;
 
 class TrainManagement;
@@ -25,7 +25,8 @@ struct Basictrain {
 };
 
 struct Stations {
-    int pos, pri;
+    char pos;
+    int pri;
     Date ari, lef;
 
     Stations() {}
@@ -114,8 +115,8 @@ private:
     sjtu::linked_hashmap<size_t, sjtu::string> trainid;
 
     sjtu::bpt<size_t, train, 340, 4, 2> tra;
-    sjtu::bpt<sjtu::pair<size_t, int>, Left_Ticket, 204, 9, 4> Tk;
-    sjtu::bpt<type3, Stations, 204, 73, 4> sta;
+    sjtu::bpt<sjtu::pair<size_t, int>, Left_Ticket, 204, 9, 6> Tk;
+    sjtu::bpt<type3, Stations, 204, 73, 6> sta;
 
     sjtu::bpt<type1, Ticket, 204, 25, 2> Get_ticket;//(username,kth) -> Ticket
     sjtu::bpt<sjtu::pair<type1, int>, Pendtype, 146, 85, 2> inqu_ticket;//((trainID,kth),timestamp) -> (username,Ticket)
@@ -234,12 +235,11 @@ void TrainManagement::delete_train(const std::string &trainID_) {
     size_t trainID = H(trainID_);
     if (!bas.count(trainID) || bas[trainID].rel == 1)return void(puts("-1"));
     tra.erase(trainID);
-    for (int i = 0; i <= bas[trainID].maxday; i++) {
-        Tk.erase(type1(trainID, i));
-    }
+    for (int i = 0; i <= bas[trainID].maxday; i++) Tk.erase(type1(trainID, i));
     bas.erase(bas.find(trainID));
     trainid.erase(trainid.find(trainID));
     puts("0");
+ //   std::cerr << trainID_ << std::endl;
 }
 
 void TrainManagement::release_train(const std::string &trainID_, const int &timestamp) {
@@ -262,7 +262,7 @@ void TrainManagement::query_train(const std::string &trainID_, const Date &date)
     std::cout << trainID_;
     printf(" %c\n", x.Type);
     int k = date - x.saleDateL, cost = 0;
-    const Left_Ticket &tk = Tk.find(type1(trainID, k));
+    auto tk = Tk.find(type1(trainID, k));
     Date now(date.m, date.d, x.saleDateL.hr, x.saleDateL.mi);
     for (int i = 0; i < x.stationNum; i++) {
         x.stations[i].print();
@@ -522,7 +522,7 @@ void TrainManagement::refund_ticket(const size_t &username, const int &k) {
         if (!inqu_ticket.empty()) {
             const sjtu::vector<sjtu::pair<sjtu::pair<type1, int>, Pendtype> > &vec = inqu_ticket.traverse_val(
                     sjtu::pair<type1, int>(res, 0), sjtu::pair<type1, int>(res, 2e9));
-            Left_Ticket tk = Tk.find(type1(trainID, K));
+            auto tk = Tk.find(type1(trainID, K));
             for (int i = 0; i < (int) vec.size(); i++) {
                 const Pendtype &x = vec[i].second;
                 if (tk.query_ticket(x.l, x.r) >= x.num) {

@@ -6,11 +6,11 @@
 
 const int DAY[]={0,1,2,3,4,5,30,31,31,30,31,30,31};
 struct Date{
-	int m,d,hr,mi;
+	char m,d,hr,mi;
 	
 	inline int change(int fl)const {
-		if(fl==0)return (24-hr)*60-mi;
-		return hr*60+mi;
+		if(fl==0)return (int)(24-hr)*60-mi;
+		return (int)hr*60+mi;
 	}
 	
 	inline bool Compare(const Date &res)const {
@@ -18,7 +18,7 @@ struct Date{
 	}
 	
 	inline int del(const Date &res)const{
-		return (hr-res.hr)*60+mi-res.mi;
+		return (int)(hr-res.hr)*60+mi-res.mi;
 	}
 
 	
@@ -27,21 +27,20 @@ struct Date{
 	} 
 	
 	void operator += (const int &t){
-		mi+=t;
-		hr+=mi/60;
-		mi%=60;
-		d+=hr/24;
-		hr%=24;
+		int Mi=mi+t,Hr=hr+Mi/60;
+		mi=Mi%60;
+		hr=Hr%24;
+		d+=Hr/24;
 		while(DAY[m]<d)d-=DAY[m++];
 	}
 	
 	Date operator + (const int &x)const{
-		Date ret(*this);
-		ret.mi+=x;
-		ret.hr+=ret.mi/60;
-		ret.mi%=60;
-		ret.d+=ret.hr/24;
-		ret.hr%=24;
+		Date ret;
+		int Mi=mi+x,Hr=hr+Mi/60;
+		ret.mi=Mi%60;
+		ret.d=d+Hr/24;
+		ret.hr=Hr%24;
+		ret.m=m;
 		while(DAY[ret.m]<ret.d)ret.d-=DAY[ret.m++];
 		return ret; 
 	}
